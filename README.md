@@ -1,6 +1,6 @@
-# Docker + Claude Code Setup
+# Run Claude Code in Docker with GPU Support
 
-Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS. Includes an optional [helper script](#section-6--helper-script-claude-dockersh) that wraps the common Docker commands.
+Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS. Includes an optional [helper script](#section-6---helper-script-claude-dockersh) that wraps the common Docker commands.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
@@ -12,18 +12,18 @@ Coding agents are incredibly useful, but handing them unrestricted access to you
 
 | Your setup | Start here |
 |---|---|
-| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1--purge-any-existing-docker-installation), then [Section 5](#section-5--running-claude-code-in-a-docker-container) or [Section 6](#section-6--helper-script-claude-dockersh) |
-| Ubuntu, no GPU | [Sections 1-3](#section-1--purge-any-existing-docker-installation), then [Section 5](#section-5--running-claude-code-in-a-docker-container) or [Section 6](#section-6--helper-script-claude-dockersh) |
-| macOS | [Section 5](#section-5--running-claude-code-in-a-docker-container) or [Section 6](#section-6--helper-script-claude-dockersh) directly |
+| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) |
+| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) |
+| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) directly |
 
 ## Table of Contents
 
-1. [Purge Any Existing Docker Installation](#section-1--purge-any-existing-docker-installation)
-2. [Install Docker Engine](#section-2--install-docker-engine)
-3. [Docker Post-Installation Setup](#section-3--docker-post-installation-setup)
-4. [Install and Configure the NVIDIA Container Toolkit](#section-4--install-and-configure-the-nvidia-container-toolkit)
-5. [Running Claude Code in a Docker Container](#section-5--running-claude-code-in-a-docker-container)
-6. [Helper Script (`claude-docker.sh`)](#section-6--helper-script-claude-dockersh)
+1. [Purge Any Existing Docker Installation](#section-1---purge-any-existing-docker-installation)
+2. [Install Docker Engine](#section-2---install-docker-engine)
+3. [Docker Post-Installation Setup](#section-3---docker-post-installation-setup)
+4. [Install and Configure the NVIDIA Container Toolkit](#section-4---install-and-configure-the-nvidia-container-toolkit)
+5. [Running Claude Code in a Docker Container](#section-5---running-claude-code-in-a-docker-container)
+6. [Helper Script (`claude-docker.sh`)](#section-6---helper-script-claude-dockersh)
 
 Prerequisites (Sections 1-4, and Section 5 GPU variant):
 
