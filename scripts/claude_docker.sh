@@ -56,18 +56,21 @@ err() {
 
 #######################################
 # Derive a container name from the current directory.
-# For example, if you are in /home/you/my-project, this
-# returns "my-project-claude". The tr command replaces any
-# characters that are not alphanumeric, underscores, dots,
-# or hyphens with a hyphen, so the name is always safe for
-# Docker.
+# The name includes the directory basename for readability
+# plus a short hash of the full path for uniqueness, so
+# directories like /work/api and /tmp/api get distinct
+# container names (e.g. "api-a1b2-claude" vs "api-f3e4-claude").
+# The tr command replaces any characters that are not
+# alphanumeric, underscores, dots, or hyphens with a hyphen,
+# so the name is always safe for Docker.
 # Outputs:
 #   The container name string to stdout.
 #######################################
 container_name() {
-  local base
+  local base hash
   base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-')"
-  echo "${base}-claude"
+  hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"
+  echo "${base}-${hash}-claude"
 }
 
 #######################################
@@ -128,7 +131,7 @@ cmd_build() {
   # -f specifies which Dockerfile to use.
   # The last argument is the build context directory (where
   # Docker looks for files referenced in the Dockerfile).
-  docker build -t "${image}" \
+  docker build --pull -t "${image}" \
     -f "${REPO_DIR}/dockerfiles/Dockerfile.claude-${variant}" \
     "${REPO_DIR}/dockerfiles"
   echo "Done. Image: ${image}"
@@ -165,6 +168,17 @@ cmd_new() {
     image="${GPU_IMAGE}"
     # += appends to the array.
     run_args+=(--gpus all)
+    shift
+  elif [[ -n "${1:-}" ]]; then
+    err "Unknown option: $1"
+    usage >&2
+    exit 1
+  fi
+
+  if [[ $# -gt 0 ]]; then
+    err "Unexpected arguments: $*"
+    usage >&2
+    exit 1
   fi
 
   # "docker image inspect" succeeds (exit 0) if the image
@@ -218,6 +232,15 @@ cmd_start() {
   local name
   name="$(container_name)"
   require_container "${name}"
+
+  local state
+  state="$(docker inspect -f '{{.State.Running}}' "${name}")"
+  if [[ "${state}" == "true" ]]; then
+    err "Container '${name}' is already running." \
+      "Use 'exec' to open a shell in it."
+    exit 1
+  fi
+
   docker start -ai "${name}"
 }
 
@@ -238,6 +261,15 @@ cmd_exec() {
   local name
   name="$(container_name)"
   require_container "${name}"
+
+  local state
+  state="$(docker inspect -f '{{.State.Running}}' "${name}")"
+  if [[ "${state}" != "true" ]]; then
+    err "Container '${name}' is not running." \
+      "Use 'start' to resume it first."
+    exit 1
+  fi
+
   docker exec -it "${name}" /bin/bash
 }
 
@@ -286,7 +318,13 @@ cmd_rm() {
     confirm
   # =~ is a regex match. ^[Yy]$ matches "Y" or "y".
   if [[ "${confirm}" =~ ^[Yy]$ ]]; then
-    docker rm "${name}"
+    local state
+    state="$(docker inspect -f '{{.State.Running}}' "${name}")"
+    if [[ "${state}" == "true" ]]; then
+      echo "Stopping container first..."
+      docker stop "${name}" >/dev/null
+    fi
+    docker rm "${name}" >/dev/null
     echo "Removed."
   else
     echo "Cancelled."
@@ -307,7 +345,7 @@ main() {
   case "${1:-}" in
     build-gpu)   cmd_build gpu ;;
     build-nogpu) cmd_build nogpu ;;
-    new)         cmd_new "${2:-}" ;;
+    new)         shift; cmd_new "$@" ;;
     start)       cmd_start ;;
     stop)        cmd_stop ;;
     exec)        cmd_exec ;;

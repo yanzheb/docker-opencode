@@ -312,23 +312,25 @@ From the repo directory:
 
 ```bash
 # GPU:
-docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/
+docker build --pull -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/
 
 # No GPU:
-docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
+docker build --pull -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
 ```
 
 Or if you copied the file to `~/.docker-templates/`:
 
 ```bash
 # GPU:
-docker build -t claude-code-gpu -f ~/.docker-templates/Dockerfile.claude-gpu ~/.docker-templates
+docker build --pull -t claude-code-gpu -f ~/.docker-templates/Dockerfile.claude-gpu ~/.docker-templates
 
 # No GPU:
-docker build -t claude-code-nogpu -f ~/.docker-templates/Dockerfile.claude-nogpu ~/.docker-templates
+docker build --pull -t claude-code-nogpu -f ~/.docker-templates/Dockerfile.claude-nogpu ~/.docker-templates
 ```
 
-You only need to rebuild if you change the Dockerfile.
+The `--pull` flag tells Docker to always fetch the latest version of the base image, ensuring you pick up security patches rather than relying on a potentially stale cached layer.
+
+You only need to rebuild if you change the Dockerfile or want to pull updated base images.
 
 ### Step 5.4 - Create a container for a new project
 
@@ -416,7 +418,7 @@ docker rm my-project-claude                          # Remove (credentials are s
 
 ## Section 6 - Helper Script (`claude_docker.sh`)
 
-The [`scripts/claude_docker.sh`](scripts/claude_docker.sh) script wraps all the Docker commands from Section 5 into short one-liners. It auto-names containers from the current directory and handles credential mounts automatically.
+The [`scripts/claude_docker.sh`](scripts/claude_docker.sh) script wraps all the Docker commands from Section 5 into short one-liners. It auto-names containers from the current directory (using a short hash of the full path so identically named directories in different locations get distinct containers) and handles credential mounts automatically.
 
 > This script is entirely optional. Every command it runs is documented in the sections above.
 
@@ -457,7 +459,7 @@ claude-docker new              # Without GPU
 claude-docker new --gpu        # With GPU
 ```
 
-This creates a container named `my-project-claude`, mounts the current directory to `/workspace`, and sets up shared credentials in `~/.claude-creds/`. Run `claude` inside the container to start Claude Code.
+This creates a container named `my-project-<hash>-claude` (e.g., `my-project-a1b2-claude`), mounts the current directory to `/workspace`, and sets up shared credentials in `~/.claude-creds/`. Run `claude` inside the container to start Claude Code.
 
 ### Step 6.4 - Daily workflow
 
