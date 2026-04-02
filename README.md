@@ -1,19 +1,36 @@
 # Docker + Claude Code Setup
 
-*Written by Yanzhe Bekkemoen with the help of [Claude](https://claude.ai) by Anthropic.*
-
 Dockerfiles and a step-by-step guide for running [Claude Code](https://code.claude.com/) in Docker containers — with or without NVIDIA GPU support, on Ubuntu or macOS. Also includes an optional [helper script](#section-7--helper-script-claude-dockersh) that wraps the common Docker commands.
 
-These instructions have been tested but are provided as-is — review each command before running it and ensure you have backups of any important data.
+> These instructions have been tested but are provided as-is — review each command before running it and ensure you have backups of any important data.
 
-**Not on Ubuntu with an NVIDIA GPU?** Skip to [Section 6](#section-6--setup-without-gpu-ubuntu-or-macos) — it covers both macOS (via Docker Desktop) and Ubuntu without a GPU. Ubuntu users without a GPU should still follow Sections 1–3 first to install Docker Engine.
+## Quick Start
 
-**Prerequisites** (Sections 1–5 only):
+| Your setup | Start here |
+|---|---|
+| Ubuntu + NVIDIA GPU | [Section 1](#section-1--purge-any-existing-docker-installation) (follow all sections) |
+| Ubuntu, no GPU | [Sections 1–3](#section-1--purge-any-existing-docker-installation) for Docker install, then skip to [Section 6](#section-6--setup-without-gpu-ubuntu-or-macos) |
+| macOS | [Section 6](#section-6--setup-without-gpu-ubuntu-or-macos) directly |
+
+## Table of Contents
+
+1. [Purge Any Existing Docker Installation](#section-1--purge-any-existing-docker-installation)
+2. [Install Docker Engine](#section-2--install-docker-engine)
+3. [Docker Post-Installation Setup](#section-3--docker-post-installation-setup)
+4. [Install and Configure the NVIDIA Container Toolkit](#section-4--install-and-configure-the-nvidia-container-toolkit)
+5. [Running Claude Code in a Docker Container with GPU Access](#section-5--running-claude-code-in-a-docker-container-with-gpu-access)
+6. [Setup Without GPU (Ubuntu or macOS)](#section-6--setup-without-gpu-ubuntu-or-macos)
+7. [Helper Script (`claude-docker.sh`)](#section-7--helper-script-claude-dockersh)
+
+<details>
+<summary><strong>Prerequisites</strong> (Sections 1–5 only)</summary>
 
 - Ubuntu 24.04 LTS (Noble Numbat), 64-bit (amd64/arm64)
 - An NVIDIA GPU with Kepler architecture or newer (compute capability ≥ 3.0)
 - NVIDIA GPU drivers already installed and working on the host (verify with `nvidia-smi`)
 - Root or sudo access
+
+</details>
 
 ---
 
@@ -33,7 +50,9 @@ sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-
 sudo apt purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 ```
 
-Both commands are safe to run even if the packages aren't installed. The first removes unofficial packages; the second uses `purge` to also delete configuration files from any prior official installation.
+Both commands are safe to run even if the packages aren't installed:
+- The first removes unofficial packages that may conflict.
+- The second uses `purge` to also delete configuration files from any prior official installation.
 
 ### Step 1.2 — Delete residual data and config files
 
@@ -48,9 +67,8 @@ sudo rm -f /etc/apt/keyrings/docker.asc
 sudo rm -f /etc/apt/keyrings/docker.gpg
 ```
 
-> **Warning:** This permanently destroys all Docker images, containers, volumes, and networks on this host. Only do this if you want a truly clean slate.
-
-You now have a fully clean system with no Docker remnants.
+> [!WARNING]
+> This permanently destroys **all** Docker images, containers, volumes, and networks on this host. Only do this if you want a truly clean slate.
 
 ---
 
@@ -98,7 +116,15 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-This installs five packages: the Docker daemon (`docker-ce`), the CLI client (`docker-ce-cli`), the container runtime (`containerd.io`), the BuildKit build plugin (`docker-buildx-plugin`), and Docker Compose v2 (`docker-compose-plugin`).
+This installs five packages:
+
+| Package | Purpose |
+|---|---|
+| `docker-ce` | Docker daemon |
+| `docker-ce-cli` | CLI client |
+| `containerd.io` | Container runtime |
+| `docker-buildx-plugin` | BuildKit build plugin |
+| `docker-compose-plugin` | Docker Compose v2 |
 
 ### Step 2.5 — Verify the installation
 
@@ -128,8 +154,10 @@ sudo usermod -aG docker $USER
 
 You must **log out and log back in** for the group change to take effect. Alternatively, in your current shell, run `newgrp docker`.
 
-> **Security note:** The `docker` group grants root-equivalent privileges on the host. Only add trusted users.
+> [!CAUTION]
+> The `docker` group grants root-equivalent privileges on the host. Only add trusted users.
 
+> [!NOTE]
 > **If running in a VM:** A full reboot may be needed instead of just logging out.
 
 ### Step 3.2 — Enable Docker to start on boot
@@ -177,7 +205,8 @@ curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-contai
     | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 ```
 
-The first command downloads NVIDIA's GPG key and converts it to the binary format apt expects. The second downloads the repository list and injects the `signed-by` directive so apt trusts packages from this repo.
+- The first command downloads NVIDIA's GPG key and converts it to the binary format apt expects.
+- The second downloads the repository list and injects the `signed-by` directive so apt trusts packages from this repo.
 
 ### Step 4.3 — Install the NVIDIA Container Toolkit
 
@@ -186,7 +215,8 @@ sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 ```
 
-> **Note on version pinning:** The official docs show pinning to a specific version (e.g., `nvidia-container-toolkit=1.18.2-1`). For most users, installing the latest available version without pinning (as above) is simpler. Pin explicitly if you need reproducible deployments.
+> [!TIP]
+> **Version pinning:** The official docs show pinning to a specific version (e.g., `nvidia-container-toolkit=1.18.2-1`). For most users, installing the latest available version without pinning (as above) is simpler. Pin explicitly if you need reproducible deployments.
 
 ### Step 4.4 — Configure NVIDIA as the default Docker runtime
 
@@ -196,11 +226,11 @@ Run the `nvidia-ctk` utility to register the NVIDIA runtime with Docker and set 
 sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
 ```
 
-This automatically edits `/etc/docker/daemon.json` to both register the `nvidia` runtime and set `"default-runtime": "nvidia"`. With the default runtime set, all containers automatically use the NVIDIA runtime — you won't need to pass `--gpus` or `--runtime=nvidia` on every `docker run` command.
+This automatically edits `/etc/docker/daemon.json` to both register the `nvidia` runtime and set `"default-runtime": "nvidia"`. With the default runtime set, **all containers automatically use the NVIDIA runtime** — you won't need to pass `--gpus` or `--runtime=nvidia` on every `docker run` command.
 
 **Source:** [NVIDIA Container Toolkit Install Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [NVIDIA Container Toolkit User Guide (`--set-as-default` flag)](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html)
 
-You can verify the result by inspecting the generated file:
+Verify the result by inspecting the generated file:
 
 ```bash
 cat /etc/docker/daemon.json
@@ -234,21 +264,32 @@ sudo systemctl restart docker
 docker run --rm nvidia/cuda:13.2.0-base-ubuntu24.04 nvidia-smi
 ```
 
-This pulls NVIDIA's official CUDA base image and runs the `nvidia-smi` system management tool inside the container. You should see output listing your GPU(s), driver version, and CUDA version — matching (or compatible with) the host driver. Because the NVIDIA runtime was set as the default above, no `--gpus` flag is needed — official CUDA images set the `NVIDIA_VISIBLE_DEVICES` environment variable internally, and the default runtime picks that up automatically. If the command fails, try adding `--gpus all` explicitly to rule out a default-runtime configuration issue.
+This pulls NVIDIA's official CUDA base image and runs `nvidia-smi` inside the container. You should see output listing your GPU(s), driver version, and CUDA version — matching (or compatible with) the host driver.
 
+Because the NVIDIA runtime was set as the default above, no `--gpus` flag is needed — official CUDA images set the `NVIDIA_VISIBLE_DEVICES` environment variable internally, and the default runtime picks that up automatically. If the command fails, try adding `--gpus all` explicitly to rule out a default-runtime configuration issue.
+
+> [!TIP]
 > **Choosing an image tag:** Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CUDA version. Check your host CUDA version with `nvidia-smi` on the host and browse available tags at [hub.docker.com/r/nvidia/cuda](https://hub.docker.com/r/nvidia/cuda).
 
 ---
 
 ## Section 5 — Running Claude Code in a Docker Container with GPU Access
 
-> **Not from official docs.** As of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The approach below bypasses Docker Sandboxes entirely and runs Claude Code in a standard Docker container with `--gpus all`. This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/).
+> [!IMPORTANT]
+> **Not from official docs.** As of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The approach below bypasses Docker Sandboxes entirely and runs Claude Code in a standard Docker container with `--gpus all`.
+>
+> This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/).
 
 ### Step 5.1 — Create the Dockerfile (one-time setup)
 
-The Dockerfile is provided in this repo at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, sets truecolor terminal support, and optionally installs the CUDA toolkit for compiling GPU code.
+The Dockerfile is provided in this repo at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It:
+- Builds on the official Claude Code sandbox template
+- Adds NVIDIA environment variables for GPU access
+- Sets truecolor terminal support
+- Optionally installs the CUDA toolkit for compiling GPU code
 
-> **Note on the `agent` user:** The official sandbox template runs as a non-root user called `agent` with sudo access. Switch to `USER root` for system-level installations, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/) for details.
+> [!NOTE]
+> **About the `agent` user:** The official sandbox template runs as a non-root user called `agent` with sudo access. Switch to `USER root` for system-level installations, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/) for details.
 
 If you cloned this repo, skip to Step 5.2. Otherwise, copy the Dockerfile to a permanent location:
 
@@ -294,9 +335,8 @@ docker run -it --gpus all \
     claude-code-gpu
 ```
 
-The container is automatically named after the working directory (e.g., `my-project-claude`). To use a custom name instead, replace `"$(basename $(pwd))-claude"` with your own (e.g., `--name webapp-claude`).
-
-The two `-v ~/.claude-creds/...` mounts share your Claude credentials (login session, plugins, settings, MCP servers) between the host and all containers. You authenticate once and every container picks it up automatically.
+- The container is automatically named after the working directory (e.g., `my-project-claude`). To use a custom name, replace `"$(basename $(pwd))-claude"` with your own (e.g., `--name webapp-claude`).
+- The two `-v ~/.claude-creds/...` mounts share your Claude credentials (login session, plugins, settings, MCP servers) between the host and all containers. You authenticate once and every container picks it up automatically.
 
 Inside the container, launch Claude Code and authenticate:
 
@@ -306,9 +346,8 @@ claude
 
 Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in interactively on first launch. Sign in with your Pro, Max, Team, or Enterprise account.
 
-> If you ever need to switch accounts, run `/login` from within Claude Code.
-
-You can verify GPU access by running `nvidia-smi` inside the container.
+> [!TIP]
+> To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
 
 ### Step 5.4 — Resume an existing container (daily workflow)
 
@@ -318,7 +357,9 @@ After the first run, always use `start` to resume the container — this preserv
 docker start -ai my-project-claude
 ```
 
-This is your day-to-day command (substitute your container name, or use `docker ps -a --filter "ancestor=claude-code-gpu"` to find it). You can run it from any directory — the project directory you specified during the initial `docker run` in Step 5.3 (via `$(pwd)`) is permanently bound to `/workspace` in the container. When you're done working, exit the shell with `exit` or `Ctrl+D`, or run:
+This is your day-to-day command. Substitute your container name, or use `docker ps -a --filter "ancestor=claude-code-gpu"` to find it. You can run it from any directory — the project directory from Step 5.3 is permanently bound to `/workspace`.
+
+When you're done working, exit the shell with `exit` or `Ctrl+D`, or run:
 
 ```bash
 docker stop my-project-claude
@@ -330,9 +371,10 @@ To open an additional terminal session in the same running container, use `docke
 docker exec -it my-project-claude /bin/bash
 ```
 
-You can open as many `docker exec` sessions as you want. Note that `docker start -ai` only works on a stopped container — use `docker exec` for any extra sessions.
+You can open as many `docker exec` sessions as you want.
 
-> Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal, though.
+> [!NOTE]
+> `docker start -ai` only works on a **stopped** container — use `docker exec` for extra sessions in a running container. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
 
 ### Step 5.5 — List and manage project containers
 
@@ -426,7 +468,8 @@ claude
 
 Claude Code starts in `/workspace` and prompts you to log in interactively on first launch. Sign in with your Pro, Max, Team, or Enterprise account.
 
-> If you ever need to switch accounts, run `/login` from within Claude Code.
+> [!TIP]
+> To switch accounts later, run `/login` from within Claude Code.
 
 ### Step 6.5 — Resume an existing container (daily workflow)
 
@@ -434,7 +477,9 @@ Claude Code starts in `/workspace` and prompts you to log in interactively on fi
 docker start -ai my-project-claude
 ```
 
-You can run this from any directory — the project directory from Step 6.4 is permanently bound to `/workspace`. When you're done working, exit the shell with `exit` or `Ctrl+D`, or run:
+You can run this from any directory — the project directory from Step 6.4 is permanently bound to `/workspace`.
+
+When you're done working, exit the shell with `exit` or `Ctrl+D`, or run:
 
 ```bash
 docker stop my-project-claude
@@ -446,9 +491,10 @@ To open an additional terminal session in the same running container, use `docke
 docker exec -it my-project-claude /bin/bash
 ```
 
-You can open as many `docker exec` sessions as you want. Note that `docker start -ai` only works on a stopped container — use `docker exec` for any extra sessions.
+You can open as many `docker exec` sessions as you want.
 
-> Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal, though.
+> [!NOTE]
+> `docker start -ai` only works on a **stopped** container — use `docker exec` for extra sessions in a running container. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
 
 ### Step 6.6 — List and manage project containers
 
@@ -462,7 +508,9 @@ docker rm my-project-claude                            # Remove (credentials are
 
 ## Section 7 — Helper Script (`claude-docker.sh`)
 
-The [`scripts/claude-docker.sh`](scripts/claude-docker.sh) script wraps all the Docker commands from Sections 5 and 6 into short one-liners. It auto-names containers from the current directory and handles credential mounts automatically. It's entirely optional — every command it runs is documented in the sections above.
+The [`scripts/claude-docker.sh`](scripts/claude-docker.sh) script wraps all the Docker commands from Sections 5 and 6 into short one-liners. It auto-names containers from the current directory and handles credential mounts automatically.
+
+> This script is entirely optional — every command it runs is documented in the sections above.
 
 ### Step 7.1 — Install the script
 
@@ -531,3 +579,13 @@ Credentials are stored on the host in `~/.claude-creds/`, so they survive remova
 | `exec` | Open an additional shell |
 | `list` | List all Claude Code containers |
 | `rm` | Remove the container (with confirmation) |
+
+---
+
+## Author
+
+Created by [Yanzhe Bekkemoen](https://github.com/yanzheb), with assistance from [Claude](https://claude.ai) by Anthropic.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
