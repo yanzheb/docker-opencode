@@ -69,7 +69,19 @@ err() {
 container_name() {
   local base hash
   base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-')"
-  hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"
+  # Docker container names must start with [a-zA-Z0-9].
+  # Strip any leading characters that aren't alphanumeric.
+  base="${base#"${base%%[a-zA-Z0-9]*}"}"
+  if command -v md5sum &>/dev/null; then
+    hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"
+  else
+    hash="$(printf '%s' "$(pwd)" | md5 | cut -c1-4)"
+  fi
+  # If base is empty after stripping (e.g. dir named "..." or "_"),
+  # fall back to a safe prefix.
+  if [[ -z "${base}" ]]; then
+    base="dir"
+  fi
   echo "${base}-${hash}-claude"
 }
 
@@ -301,13 +313,26 @@ cmd_list() {
   # --filter selects containers built from a specific image.
   # --format controls output columns using Go templates.
   # column -t aligns the tab-separated columns neatly.
-  local fmt="{{.Names}}\t{{.Status}}"
-  gpu_list="$(docker ps -a \
-    --filter "ancestor=${GPU_IMAGE}" \
-    --format "${fmt}" | column -t -s $'\t')"
-  nogpu_list="$(docker ps -a \
-    --filter "ancestor=${NOGPU_IMAGE}" \
-    --format "${fmt}" | column -t -s $'\t')"
+  local fmt
+  # Use column to align output if available, otherwise fall back
+  # to plain tab-separated output.
+  if command -v column &>/dev/null; then
+    fmt="{{.Names}}\t{{.Status}}"
+    gpu_list="$(docker ps -a \
+      --filter "ancestor=${GPU_IMAGE}" \
+      --format "${fmt}" | column -t -s $'\t')"
+    nogpu_list="$(docker ps -a \
+      --filter "ancestor=${NOGPU_IMAGE}" \
+      --format "${fmt}" | column -t -s $'\t')"
+  else
+    fmt="{{.Names}}  {{.Status}}"
+    gpu_list="$(docker ps -a \
+      --filter "ancestor=${GPU_IMAGE}" \
+      --format "${fmt}")"
+    nogpu_list="$(docker ps -a \
+      --filter "ancestor=${NOGPU_IMAGE}" \
+      --format "${fmt}")"
+  fi
 
   echo "GPU containers:"
   # ${var:-(none)}: use $var if non-empty, otherwise "(none)".
