@@ -242,7 +242,7 @@ This pulls NVIDIA's official CUDA base image and runs the `nvidia-smi` system ma
 
 ## Section 5 — Running Claude Code in a Docker Container with GPU Access
 
-> **Not from official docs.** As of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The approach below bypasses Docker Sandboxes entirely and runs Claude Code in a standard Docker container with `--gpus all`. This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/).
+> **Not from official docs.** As of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The approach below bypasses Docker Sandboxes entirely and runs Claude Code in a standard Docker container with `--gpus all`. This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/).
 
 ### Step 5.1 — Create the Dockerfile (one-time setup)
 
