@@ -111,7 +111,7 @@ Commands:
 Options:
   --gpu           Use the GPU image ('new' command)
 
-The container is automatically named <directory>-claude
+The container is automatically named <directory>-<hash>-claude
 based on your current working directory.
 EOF
 }
@@ -211,6 +211,20 @@ cmd_new() {
 }
 
 #######################################
+# Exit with an error if extra arguments were passed.
+# Call at the start of commands that take no arguments.
+# Arguments:
+#   $@ - Remaining arguments (should be empty).
+#######################################
+reject_extra_args() {
+  if [[ $# -gt 0 ]]; then
+    err "Unexpected arguments: $*"
+    usage >&2
+    exit 1
+  fi
+}
+
+#######################################
 # Exit with an error if the container does not exist.
 # Arguments:
 #   $1 - Container name.
@@ -229,6 +243,7 @@ require_container() {
 # Flags: -a = attach stdout/stderr, -i = interactive.
 #######################################
 cmd_start() {
+  reject_extra_args "$@"
   local name
   name="$(container_name)"
   require_container "${name}"
@@ -248,6 +263,7 @@ cmd_start() {
 # Stop the container for the current directory.
 #######################################
 cmd_stop() {
+  reject_extra_args "$@"
   local name
   name="$(container_name)"
   require_container "${name}"
@@ -258,6 +274,7 @@ cmd_stop() {
 # Open an extra shell session inside a running container.
 #######################################
 cmd_exec() {
+  reject_extra_args "$@"
   local name
   name="$(container_name)"
   require_container "${name}"
@@ -279,16 +296,18 @@ cmd_exec() {
 #   GPU_IMAGE, NOGPU_IMAGE
 #######################################
 cmd_list() {
+  reject_extra_args "$@"
   local gpu_list nogpu_list
   # --filter selects containers built from a specific image.
   # --format controls output columns using Go templates.
-  local fmt="  {{.Names}}\t{{.Status}}"
+  # column -t aligns the tab-separated columns neatly.
+  local fmt="{{.Names}}\t{{.Status}}"
   gpu_list="$(docker ps -a \
     --filter "ancestor=${GPU_IMAGE}" \
-    --format "${fmt}")"
+    --format "${fmt}" | column -t -s $'\t')"
   nogpu_list="$(docker ps -a \
     --filter "ancestor=${NOGPU_IMAGE}" \
-    --format "${fmt}")"
+    --format "${fmt}" | column -t -s $'\t')"
 
   echo "GPU containers:"
   # ${var:-(none)}: use $var if non-empty, otherwise "(none)".
@@ -306,6 +325,7 @@ cmd_list() {
 #   CREDS_DIR
 #######################################
 cmd_rm() {
+  reject_extra_args "$@"
   local name
   name="$(container_name)"
   require_container "${name}"
@@ -343,14 +363,14 @@ main() {
   # case...esac is bash's version of a switch statement.
   # Each pattern ends with ) and each branch ends with ;;
   case "${1:-}" in
-    build-gpu)   cmd_build gpu ;;
-    build-nogpu) cmd_build nogpu ;;
+    build-gpu)   shift; reject_extra_args "$@"; cmd_build gpu ;;
+    build-nogpu) shift; reject_extra_args "$@"; cmd_build nogpu ;;
     new)         shift; cmd_new "$@" ;;
-    start)       cmd_start ;;
-    stop)        cmd_stop ;;
-    exec)        cmd_exec ;;
-    list)        cmd_list ;;
-    rm)          cmd_rm ;;
+    start)       shift; cmd_start "$@" ;;
+    stop)        shift; cmd_stop "$@" ;;
+    exec)        shift; cmd_exec "$@" ;;
+    list)        shift; cmd_list "$@" ;;
+    rm)          shift; cmd_rm "$@" ;;
     -h|--help|"") usage ;;
     *)
       err "Unknown command: $1"
