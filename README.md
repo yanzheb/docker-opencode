@@ -1,6 +1,6 @@
 # Run Claude Code in Docker with GPU Support
 
-Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS. Includes an optional [helper script](#section-6---helper-script-claude-dockersh) that wraps the common Docker commands.
+Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS. Includes an optional [helper script](#section-6---helper-script-claude_dockersh) that wraps the common Docker commands.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
@@ -12,9 +12,9 @@ Coding agents are incredibly useful, but handing them unrestricted access to you
 
 | Your setup | Start here |
 |---|---|
-| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) |
-| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) |
-| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude-dockersh) directly |
+| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) |
+| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) |
+| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) directly |
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Coding agents are incredibly useful, but handing them unrestricted access to you
 3. [Docker Post-Installation Setup](#section-3---docker-post-installation-setup)
 4. [Install and Configure the NVIDIA Container Toolkit](#section-4---install-and-configure-the-nvidia-container-toolkit)
 5. [Running Claude Code in a Docker Container](#section-5---running-claude-code-in-a-docker-container)
-6. [Helper Script (`claude-docker.sh`)](#section-6---helper-script-claude-dockersh)
+6. [Helper Script (`claude_docker.sh`)](#section-6---helper-script-claude_dockersh)
 
 Prerequisites (Sections 1-4, and Section 5 GPU variant):
 
@@ -264,7 +264,7 @@ This section covers both GPU and non-GPU setups. Use the GPU variant if you comp
 
 Note on GPU passthrough: as of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The GPU approach below bypasses Docker Sandboxes and runs Claude Code in a standard Docker container with `--gpus all`.
 
-This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/).
+This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
 
 ### Step 5.1 - Install Docker (macOS only)
 
@@ -292,7 +292,7 @@ GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dock
 
 No GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu). It builds on the official Claude Code sandbox template and adds truecolor terminal support.
 
-The official sandbox template runs as a non-root user called `agent` with sudo access. Switch to `USER root` for system-level installations, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/templates/) for details.
+The official sandbox template runs as a non-root user called `agent` with sudo access. Switch to `USER root` for system-level installations, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
 If you cloned this repo, skip to Step 5.3. Otherwise, copy the Dockerfile to a permanent location:
 
@@ -414,9 +414,9 @@ docker stop my-project-claude                        # Stop a project container
 docker rm my-project-claude                          # Remove (credentials are safe on host)
 ```
 
-## Section 6 - Helper Script (`claude-docker.sh`)
+## Section 6 - Helper Script (`claude_docker.sh`)
 
-The [`scripts/claude-docker.sh`](scripts/claude-docker.sh) script wraps all the Docker commands from Section 5 into short one-liners. It auto-names containers from the current directory and handles credential mounts automatically.
+The [`scripts/claude_docker.sh`](scripts/claude_docker.sh) script wraps all the Docker commands from Section 5 into short one-liners. It auto-names containers from the current directory and handles credential mounts automatically.
 
 > This script is entirely optional. Every command it runs is documented in the sections above.
 
@@ -431,10 +431,10 @@ Clone this repo (if you haven't already) and optionally symlink the script so it
 ```bash
 git clone https://github.com/yanzheb/docker-claude-code-setup.git
 cd docker-claude-code-setup
-chmod +x scripts/claude-docker.sh
+chmod +x scripts/claude_docker.sh
 
 # Optional: make it available globally
-sudo ln -s "$(pwd)/scripts/claude-docker.sh" /usr/local/bin/claude-docker
+sudo ln -s "$(pwd)/scripts/claude_docker.sh" /usr/local/bin/claude-docker
 
 # To remove the symlink later:
 sudo rm /usr/local/bin/claude-docker
