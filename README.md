@@ -346,24 +346,29 @@ Then create a container from the project directory:
 ```bash
 cd ~/my-project
 
+# Derive the container name (same scheme as claude_docker.sh):
+dir_base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
+dir_hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
+cname="${dir_base:-dir}-${dir_hash}-claude"
+
 # GPU:
 docker run -it --gpus all \
-    --name "$(basename $(pwd))-claude" \
-    -v $(pwd):/workspace \
+    --name "${cname}" \
+    -v "$(pwd)":/workspace \
     -v ~/.claude-creds/.claude:/home/agent/.claude \
     -v ~/.claude-creds/.claude.json:/home/agent/.claude.json \
     claude-code-gpu
 
 # No GPU:
 docker run -it \
-    --name "$(basename $(pwd))-claude" \
-    -v $(pwd):/workspace \
+    --name "${cname}" \
+    -v "$(pwd)":/workspace \
     -v ~/.claude-creds/.claude:/home/agent/.claude \
     -v ~/.claude-creds/.claude.json:/home/agent/.claude.json \
     claude-code-nogpu
 ```
 
-- The container is named after the working directory (e.g., `my-project-claude`). For a custom name, replace `"$(basename $(pwd))-claude"` with your own (e.g., `--name webapp-claude`).
+- The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`). This matches the naming scheme used by `claude_docker.sh`, so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
 - The two `-v ~/.claude-creds/...` mounts share your Claude credentials (login session, plugins, settings, MCP servers) between the host and all containers. You authenticate once and every container picks it up.
 
 Inside the container, launch Claude Code and authenticate:
@@ -381,7 +386,7 @@ To switch accounts later, run `/login` from within Claude Code. To verify GPU ac
 After the first run, always use `start` to resume the container. This preserves installed packages and configuration:
 
 ```bash
-docker start -ai my-project-claude
+docker start -ai my-project-a1b2-claude
 ```
 
 This is your day-to-day command. Substitute your container name, or use the filter commands below to find it. You can run it from any directory since the project directory from Step 5.4 is permanently bound to `/workspace`.
@@ -389,18 +394,18 @@ This is your day-to-day command. Substitute your container name, or use the filt
 When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
 
 ```bash
-docker stop my-project-claude
+docker stop my-project-a1b2-claude
 ```
 
 To open an additional terminal in the same running container, use `docker exec` from another terminal:
 
 ```bash
-docker exec -it my-project-claude /bin/bash
+docker exec -it my-project-a1b2-claude /bin/bash
 ```
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
+`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail; use `exec` instead. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
 
 ### Step 5.6 - List and manage project containers
 
@@ -412,8 +417,8 @@ docker ps -a --filter "ancestor=claude-code-gpu"
 docker ps -a --filter "ancestor=claude-code-nogpu"
 
 # Common management commands:
-docker stop my-project-claude                        # Stop a project container
-docker rm my-project-claude                          # Remove (credentials are safe on host)
+docker stop my-project-a1b2-claude                   # Stop a project container
+docker rm my-project-a1b2-claude                     # Remove (credentials are safe on host)
 ```
 
 ## Section 6 - Helper Script (`claude_docker.sh`)
