@@ -1,0 +1,11 @@
+# Start from the official Docker sandbox template for Claude Code.
+# This already includes Claude Code, Node.js, Python, Git, Go, and dev tools.
+FROM docker/sandbox-templates:claude-code
+
+# Enable full 24-bit truecolor so Claude Code renders its theme correctly.
+# Without these, colors appear washed out inside containers.
+ENV TERM=xterm-256color
+ENV COLORTERM=truecolor
+
+WORKDIR /workspace
+CMD ["/bin/bash"]
