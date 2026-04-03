@@ -289,29 +289,18 @@ Verify Docker is running:
 docker --version
 ```
 
-### Step 5.2 - Create the Dockerfile (one-time setup)
+### Step 5.2 - Review the Dockerfiles
 
-GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, truecolor terminal support, and the [pixi](https://github.com/prefix-dev/pixi/) package manager.
+Both Dockerfiles build on the official Claude Code sandbox template and add truecolor terminal support and the [pixi](https://github.com/prefix-dev/pixi/) package manager. The GPU variant additionally sets NVIDIA environment variables for GPU access.
 
-No GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu). It builds on the official Claude Code sandbox template and adds truecolor terminal support and the [pixi](https://github.com/prefix-dev/pixi/) package manager.
+- GPU: [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu)
+- No GPU: [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. If you need to add system-level installations, switch to `USER root` in the Dockerfile and back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
-If you cloned this repo, skip to Step 5.3. Otherwise, copy the Dockerfile to a permanent location:
-
-```bash
-mkdir -p ~/.docker-templates
-
-# GPU:
-cp dockerfiles/Dockerfile.claude-gpu ~/.docker-templates/
-
-# No GPU:
-cp dockerfiles/Dockerfile.claude-nogpu ~/.docker-templates/
-```
-
 ### Step 5.3 - Build the image (one-time setup)
 
-From the repo directory:
+From the repo root:
 
 ```bash
 # GPU:
@@ -319,16 +308,6 @@ docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles
 
 # No GPU:
 docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
-```
-
-Or if you copied the file to `~/.docker-templates/`:
-
-```bash
-# GPU:
-docker build -t claude-code-gpu -f ~/.docker-templates/Dockerfile.claude-gpu ~/.docker-templates
-
-# No GPU:
-docker build -t claude-code-nogpu -f ~/.docker-templates/Dockerfile.claude-nogpu ~/.docker-templates
 ```
 
 You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of using a cached layer.
