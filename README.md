@@ -318,9 +318,13 @@ Each project gets its own named container. Before your first container, create t
 
 ```bash
 mkdir -p ~/.claude-creds
+chmod 700 ~/.claude-creds
 touch ~/.claude-creds/.credentials.json
 echo '{}' > ~/.claude-creds/.claude.json
+chmod 600 ~/.claude-creds/.credentials.json ~/.claude-creds/.claude.json
 ```
+
+The `chmod 700` restricts the directory so only your user can access it. The `chmod 600` ensures the credential files are readable and writable only by you, preventing other users on the system from reading your login tokens.
 
 Then create a container from the project directory:
 
