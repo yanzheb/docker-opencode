@@ -335,7 +335,7 @@ cname="${dir_base:-dir}-${dir_hash}-claude"
 # GPU:
 docker run -it --gpus all \
     --name "${cname}" \
-    -v "$(pwd)":/workspace \
+    --mount type=bind,src="$(pwd)",dst=/workspace \
     --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
     --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-gpu
@@ -343,14 +343,14 @@ docker run -it --gpus all \
 # No GPU:
 docker run -it \
     --name "${cname}" \
-    -v "$(pwd)":/workspace \
+    --mount type=bind,src="$(pwd)",dst=/workspace \
     --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
     --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-nogpu
 ```
 
 - The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`), so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
-- The two `--mount` flags bind-mount only your Claude login credentials between the host and all containers. You authenticate once and every container picks it up. Settings, plugins, and MCP server configurations remain container-local. `--mount` is used instead of `-v` for the credential files because `-v` silently creates a missing host path as a directory, while `--mount` errors out — catching misconfigured paths before they cause problems.
+- The credential `--mount` flags bind-mount only your Claude login credentials between the host and all containers. You authenticate once and every container picks it up. Settings, plugins, and MCP server configurations remain container-local.
 
 Inside the container, launch Claude Code and authenticate:
 
