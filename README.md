@@ -6,7 +6,11 @@ Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in D
 
 ## Why This Repo?
 
-Coding agents are incredibly useful, but handing them unrestricted access to your machine is a trade-off not everyone is comfortable with. I wanted the productivity benefits of Claude Code without sacrificing privacy or control, so I looked for a way to run it sandboxed in Docker. Docker's [official sandbox guide](https://docs.docker.com/ai/sandboxes/agents/claude-code/) was a natural starting point, but it relies on microVMs that don't support GPU passthrough, which was a dealbreaker for my workflow. This repo documents the setup I built to work around that limitation.
+Coding agents are incredibly useful, but handing them unrestricted access to your machine is a trade-off not everyone is comfortable with. I wanted the productivity benefits of Claude Code without sacrificing privacy or control, so I looked for a way to run it sandboxed in Docker.
+
+[Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/) (experimental, under active development) were a natural starting point, but they rely on microVMs that don't support GPU passthrough, which was a dealbreaker for my workflow. This repo documents the setup I built to work around that limitation.
+
+Note: Claude Code also offers [native sandboxing](https://code.claude.com/docs/en/sandboxing) using OS-level primitives (bubblewrap on Linux, Seatbelt on macOS). Native sandboxing provides filesystem and network isolation without Docker and does not block GPU access. If you don't need full container isolation, that may be a simpler option.
 
 ## Quick Start
 
@@ -261,7 +265,7 @@ Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CU
 
 This section covers both GPU and non-GPU setups. Use the GPU variant if you completed Section 4; use the no-GPU variant for Ubuntu without a GPU or macOS.
 
-Note on GPU passthrough: as of April 2026, `docker sandbox run` uses microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. The GPU approach below bypasses Docker Sandboxes and runs Claude Code in a standard Docker container with `--gpus all`.
+Note on GPU passthrough: [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/) (CLI: `sbx`) use microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. Docker Sandboxes is experimental and under active development, so this may change. The GPU approach below bypasses Docker Sandboxes and runs Claude Code in a standard Docker container with `--gpus all`.
 
 This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
 
@@ -403,20 +407,6 @@ docker exec -it my-project-a1b2-claude /bin/bash
 You can open as many `docker exec` sessions as you want.
 
 `docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail; use `exec` instead. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
-
-### Step 5.6 - List and manage project containers
-
-```bash
-# GPU containers:
-docker ps -a --filter "ancestor=claude-code-gpu"
-
-# Non-GPU containers:
-docker ps -a --filter "ancestor=claude-code-nogpu"
-
-# Common management commands:
-docker stop my-project-a1b2-claude                   # Stop a project container
-docker rm my-project-a1b2-claude                     # Remove (credentials are safe on host)
-```
 
 ## Useful Commands
 
