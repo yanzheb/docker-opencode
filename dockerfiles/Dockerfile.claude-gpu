@@ -2,8 +2,6 @@
 # This already includes Claude Code, Node.js, Python, Git, Go, and dev tools.
 FROM docker/sandbox-templates:claude-code
 
-USER root
-
 # Set NVIDIA environment variables so the container requests GPU access.
 # The NVIDIA Container Toolkit on the host uses these to inject driver
 # libraries at container startup — no CUDA install needed inside the image
@@ -16,8 +14,9 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
-# Switch back to the default non-root agent user.
-USER agent
+# Install pixi package manager (https://github.com/prefix-dev/pixi/).
+RUN curl -fsSL https://pixi.sh/install.sh | bash
+ENV PATH="/home/agent/.pixi/bin:${PATH}"
 
 WORKDIR /workspace
 CMD ["/bin/bash"]

@@ -287,11 +287,11 @@ docker --version
 
 ### Step 5.2 - Create the Dockerfile (one-time setup)
 
-GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, and sets truecolor terminal support.
+GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, truecolor terminal support, and the [pixi](https://github.com/prefix-dev/pixi/) package manager.
 
-No GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu). It builds on the official Claude Code sandbox template and adds truecolor terminal support.
+No GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu). It builds on the official Claude Code sandbox template and adds truecolor terminal support and the [pixi](https://github.com/prefix-dev/pixi/) package manager.
 
-The official sandbox template runs as a non-root user called `agent` with sudo access. Switch to `USER root` for system-level installations, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
+The official sandbox template runs as a non-root user called `agent` with sudo access. If you need to add system-level installations, switch to `USER root` in the Dockerfile and back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
 If you cloned this repo, skip to Step 5.3. Otherwise, copy the Dockerfile to a permanent location:
 
@@ -311,25 +311,23 @@ From the repo directory:
 
 ```bash
 # GPU:
-docker build --pull -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/
+docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/
 
 # No GPU:
-docker build --pull -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
+docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
 ```
 
 Or if you copied the file to `~/.docker-templates/`:
 
 ```bash
 # GPU:
-docker build --pull -t claude-code-gpu -f ~/.docker-templates/Dockerfile.claude-gpu ~/.docker-templates
+docker build -t claude-code-gpu -f ~/.docker-templates/Dockerfile.claude-gpu ~/.docker-templates
 
 # No GPU:
-docker build --pull -t claude-code-nogpu -f ~/.docker-templates/Dockerfile.claude-nogpu ~/.docker-templates
+docker build -t claude-code-nogpu -f ~/.docker-templates/Dockerfile.claude-nogpu ~/.docker-templates
 ```
 
-The `--pull` flag tells Docker to always fetch the latest version of the base image, ensuring you pick up security patches rather than relying on a potentially stale cached layer.
-
-You only need to rebuild if you change the Dockerfile or want to pull updated base images.
+You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of using a cached layer.
 
 ### Step 5.4 - Create a container for a new project
 
@@ -424,8 +422,8 @@ docker rm my-project-a1b2-claude                     # Remove (credentials are s
 
 | Task | Command |
 |---|---|
-| Build image (GPU) | `docker build --pull -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/` |
-| Build image (no GPU) | `docker build --pull -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/` |
+| Build image (GPU) | `docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/` |
+| Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/` |
 | Create container (GPU) | `docker run -it --gpus all --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-gpu` |
 | Create container (no GPU) | `docker run -it --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-nogpu` |
 | Resume a stopped container | `docker start -ai <name>` |
