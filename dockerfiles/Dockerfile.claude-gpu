@@ -16,18 +16,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
-# (Optional) Install the CUDA toolkit inside the container if you need
-# to compile CUDA code (e.g., PyTorch extensions, custom CUDA kernels).
-# Remove this block if you only need runtime GPU access.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb \
-    && dpkg -i cuda-keyring_1.1-1_all.deb \
-    && rm cuda-keyring_1.1-1_all.deb \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    cuda-toolkit \
-    && rm -rf /var/lib/apt/lists/*
-
 # Switch back to the default non-root agent user.
 USER agent
 

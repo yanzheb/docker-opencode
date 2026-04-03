@@ -1,6 +1,6 @@
 # Run Claude Code in Docker with GPU Support
 
-Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS. Includes an optional [helper script](#section-6---helper-script-claude_dockersh) that wraps the common Docker commands.
+Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
@@ -12,9 +12,9 @@ Coding agents are incredibly useful, but handing them unrestricted access to you
 
 | Your setup | Start here |
 |---|---|
-| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) |
-| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) |
-| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) or [Section 6](#section-6---helper-script-claude_dockersh) directly |
+| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) |
+| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) |
+| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) directly |
 
 ## Table of Contents
 
@@ -23,7 +23,6 @@ Coding agents are incredibly useful, but handing them unrestricted access to you
 3. [Docker Post-Installation Setup](#section-3---docker-post-installation-setup)
 4. [Install and Configure the NVIDIA Container Toolkit](#section-4---install-and-configure-the-nvidia-container-toolkit)
 5. [Running Claude Code in a Docker Container](#section-5---running-claude-code-in-a-docker-container)
-6. [Helper Script (`claude_docker.sh`)](#section-6---helper-script-claude_dockersh)
 
 Prerequisites (Sections 1-4, and Section 5 GPU variant):
 
@@ -288,7 +287,7 @@ docker --version
 
 ### Step 5.2 - Create the Dockerfile (one-time setup)
 
-GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, sets truecolor terminal support, and optionally installs the CUDA toolkit for compiling GPU code.
+GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu). It builds on the official Claude Code sandbox template, adds NVIDIA environment variables for GPU access, and sets truecolor terminal support.
 
 No GPU: the Dockerfile is at [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu). It builds on the official Claude Code sandbox template and adds truecolor terminal support.
 
@@ -346,7 +345,7 @@ Then create a container from the project directory:
 ```bash
 cd ~/my-project
 
-# Derive the container name (same scheme as claude_docker.sh):
+# Derive the container name from the current directory:
 dir_base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
 dir_hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
 cname="${dir_base:-dir}-${dir_hash}-claude"
@@ -368,7 +367,7 @@ docker run -it \
     claude-code-nogpu
 ```
 
-- The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`). This matches the naming scheme used by `claude_docker.sh`, so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
+- The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`), so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
 - The two `-v ~/.claude-creds/...` mounts share your Claude credentials (login session, plugins, settings, MCP servers) between the host and all containers. You authenticate once and every container picks it up.
 
 Inside the container, launch Claude Code and authenticate:
@@ -421,83 +420,22 @@ docker stop my-project-a1b2-claude                   # Stop a project container
 docker rm my-project-a1b2-claude                     # Remove (credentials are safe on host)
 ```
 
-## Section 6 - Helper Script (`claude_docker.sh`)
+## Useful Commands
 
-The [`scripts/claude_docker.sh`](scripts/claude_docker.sh) script wraps all the Docker commands from Section 5 into short one-liners. It auto-names containers from the current directory (using a short hash of the full path so identically named directories in different locations get distinct containers) and handles credential mounts automatically.
-
-> This script is entirely optional. Every command it runs is documented in the sections above.
-
-If you use this script, you can skip Steps 5.2-5.6. The script handles Dockerfile references, image builds, container creation, credential mounts, and container management.
-
-You still need to complete the infrastructure steps manually: Docker installation (Sections 1-3 or Step 5.1 for macOS) and NVIDIA Container Toolkit setup (Section 4, GPU only).
-
-### Step 6.1 - Install the script
-
-Clone this repo (if you haven't already) and optionally symlink the script so it's available from anywhere:
-
-```bash
-git clone https://github.com/yanzheb/docker-claude-code-setup.git
-cd docker-claude-code-setup
-chmod +x scripts/claude_docker.sh
-
-# Optional: make it available globally
-sudo ln -s "$(pwd)/scripts/claude_docker.sh" /usr/local/bin/claude-docker
-
-# To remove the symlink later:
-sudo rm /usr/local/bin/claude-docker
-```
-
-### Step 6.2 - Build an image
-
-```bash
-claude-docker build-gpu       # Builds from dockerfiles/Dockerfile.claude-gpu
-claude-docker build-nogpu     # Builds from dockerfiles/Dockerfile.claude-nogpu
-```
-
-### Step 6.3 - Create a container for a new project
-
-From the project directory:
-
-```bash
-cd ~/my-project
-claude-docker new              # Without GPU
-claude-docker new --gpu        # With GPU
-```
-
-This creates a container named `my-project-<hash>-claude` (e.g., `my-project-a1b2-claude`), mounts the current directory to `/workspace`, and sets up shared credentials in `~/.claude-creds/`. Run `claude` inside the container to start Claude Code.
-
-### Step 6.4 - Daily workflow
-
-```bash
-cd ~/my-project
-claude-docker start            # Resume the container (docker start -ai)
-claude-docker exec             # Open an additional shell in a running container
-claude-docker stop             # Stop the container
-```
-
-`start`, `stop`, and `exec` all detect the container name from the current directory.
-
-### Step 6.5 - List and remove containers
-
-```bash
-claude-docker list             # Show all Claude Code containers (GPU and non-GPU)
-claude-docker rm               # Remove the container for the current directory (prompts for confirmation)
-```
-
-Credentials are stored on the host in `~/.claude-creds/`, so they survive removal.
-
-### Step 6.6 - All commands
-
-| Command | What it does |
+| Task | Command |
 |---|---|
-| `build-gpu` | Build the GPU image |
-| `build-nogpu` | Build the no-GPU image |
-| `new [--gpu]` | Create a new container for the current directory |
-| `start` | Resume the container |
-| `stop` | Stop the container |
-| `exec` | Open an additional shell |
-| `list` | List all Claude Code containers |
-| `rm` | Remove the container (with confirmation) |
+| Build image (GPU) | `docker build --pull -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/` |
+| Build image (no GPU) | `docker build --pull -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/` |
+| Create container (GPU) | `docker run -it --gpus all --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-gpu` |
+| Create container (no GPU) | `docker run -it --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-nogpu` |
+| Resume a stopped container | `docker start -ai <name>` |
+| Open extra shell in running container | `docker exec -it <name> /bin/bash` |
+| Stop a container | `docker stop <name>` |
+| Remove a container | `docker rm <name>` |
+| List GPU containers | `docker ps -a --filter "ancestor=claude-code-gpu"` |
+| List non-GPU containers | `docker ps -a --filter "ancestor=claude-code-nogpu"` |
+| Launch Claude Code (inside container) | `claude` |
+| Verify GPU access (inside container) | `nvidia-smi` |
 
 ## Author
 
