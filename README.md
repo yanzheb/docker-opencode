@@ -335,10 +335,11 @@ You only need to rebuild if you change the Dockerfile or want to pull updated ba
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. Before your first container, create a shared credentials directory on the host (one-time setup):
+Each project gets its own named container. Before your first container, create the shared credential files on the host (one-time setup):
 
 ```bash
-mkdir -p ~/.claude-creds/.claude
+mkdir -p ~/.claude-creds
+touch ~/.claude-creds/.credentials.json
 echo '{}' > ~/.claude-creds/.claude.json
 ```
 
@@ -356,21 +357,21 @@ cname="${dir_base:-dir}-${dir_hash}-claude"
 docker run -it --gpus all \
     --name "${cname}" \
     -v "$(pwd)":/workspace \
-    -v ~/.claude-creds/.claude:/home/agent/.claude \
-    -v ~/.claude-creds/.claude.json:/home/agent/.claude.json \
+    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-gpu
 
 # No GPU:
 docker run -it \
     --name "${cname}" \
     -v "$(pwd)":/workspace \
-    -v ~/.claude-creds/.claude:/home/agent/.claude \
-    -v ~/.claude-creds/.claude.json:/home/agent/.claude.json \
+    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-nogpu
 ```
 
 - The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`), so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
-- The two `-v ~/.claude-creds/...` mounts share your Claude credentials (login session, plugins, settings, MCP servers) between the host and all containers. You authenticate once and every container picks it up.
+- The two `--mount` flags bind-mount only your Claude login credentials between the host and all containers. You authenticate once and every container picks it up. Settings, plugins, and MCP server configurations remain container-local. `--mount` is used instead of `-v` for the credential files because `-v` silently creates a missing host path as a directory, while `--mount` errors out — catching misconfigured paths before they cause problems.
 
 Inside the container, launch Claude Code and authenticate:
 
@@ -406,7 +407,7 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail; use `exec` instead. Credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Installed packages inside the container are still lost on removal.
+`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail; use `exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
 ## Useful Commands
 
@@ -414,8 +415,8 @@ You can open as many `docker exec` sessions as you want.
 |---|---|
 | Build image (GPU) | `docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/` |
 | Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/` |
-| Create container (GPU) | `docker run -it --gpus all --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-gpu` |
-| Create container (no GPU) | `docker run -it --name <name> -v "$(pwd)":/workspace -v ~/.claude-creds/.claude:/home/agent/.claude -v ~/.claude-creds/.claude.json:/home/agent/.claude.json claude-code-nogpu` |
+| Create container (GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
+| Create container (no GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
 | Resume a stopped container | `docker start -ai <name>` |
 | Open extra shell in running container | `docker exec -it <name> /bin/bash` |
 | Stop a container | `docker stop <name>` |
