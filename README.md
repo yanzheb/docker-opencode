@@ -24,13 +24,13 @@ So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-t
 
 | Your setup | Start here |
 |---|---|
-| Ubuntu + NVIDIA GPU | [Sections 1-4](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) |
-| Ubuntu, no GPU | [Sections 1-3](#section-1---purge-any-existing-docker-installation), then [Section 5](#section-5---running-claude-code-in-a-docker-container) |
+| Ubuntu + NVIDIA GPU | [Sections 2-4](#section-2---install-docker-engine), then [Section 5](#section-5---running-claude-code-in-a-docker-container) (Section 1 optional) |
+| Ubuntu, no GPU | [Sections 2-3](#section-2---install-docker-engine), then [Section 5](#section-5---running-claude-code-in-a-docker-container) (Section 1 optional) |
 | macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) directly |
 
 ## Table of Contents
 
-1. [Purge Any Existing Docker Installation](#section-1---purge-any-existing-docker-installation)
+1. [Purge Any Existing Docker Installation (Optional)](#section-1-optional---purge-any-existing-docker-installation)
 2. [Install Docker Engine](#section-2---install-docker-engine)
 3. [Docker Post-Installation Setup](#section-3---docker-post-installation-setup)
 4. [Install and Configure the NVIDIA Container Toolkit](#section-4---install-and-configure-the-nvidia-container-toolkit)
@@ -43,9 +43,10 @@ Prerequisites (Sections 1-4, and Section 5 GPU variant):
 - NVIDIA GPU drivers installed and working on the host (verify with `nvidia-smi`)
 - Root or sudo access
 
-## Section 1 - Purge Any Existing Docker Installation
+## Section 1 (Optional) - Purge Any Existing Docker Installation
 
-Remove all conflicting or leftover packages and data before installing Docker cleanly.
+<details>
+<summary><strong>Click to expand.</strong> Skip this section if you don't already have Docker installed or don't need a clean slate. It removes all conflicting or leftover packages and data before installing Docker cleanly.</summary>
 
 Source: [docs.docker.com/engine/install/ubuntu - "Uninstall old versions"](https://docs.docker.com/engine/install/ubuntu/#uninstall-old-versions) and ["Uninstall Docker Engine"](https://docs.docker.com/engine/install/ubuntu/#uninstall-docker-engine)
 
@@ -77,6 +78,8 @@ sudo rm -f /etc/apt/keyrings/docker.gpg
 ```
 
 Warning: this permanently destroys all Docker images, containers, volumes, and networks on this host. Only do this if you want a clean slate.
+
+</details>
 
 ## Section 2 - Install Docker Engine
 
@@ -354,12 +357,13 @@ chmod 600 ~/.claude-creds/.credentials.json ~/.claude-creds/.claude.json
 
 `chmod 700`/`600` restrict the directory and files to your user so nobody else on the system can read your login tokens.
 
-Then create the container from the project directory:
+Then create the container from the project directory. If you want a custom container name, skip the `cname` block and pass your own value to `--name` (e.g., `--name webapp-claude`):
 
 ```bash
 cd ~/my-project
 
-# Derive the container name from the current directory:
+# Optional: derive the container name from the current directory.
+# Skip this block if you'd rather pass your own name to --name below.
 dir_base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
 dir_hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
 cname="${dir_base:-dir}-${dir_hash}-claude"
@@ -381,7 +385,7 @@ docker run -it \
     claude-code-nogpu
 ```
 
-The hash in the name disambiguates directories that share a basename but live in different locations. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`). The credential `--mount` flags share only your Claude login between containers; settings, plugins, and MCP server configurations remain container-local.
+The hash in the derived name disambiguates directories that share a basename but live in different locations. The credential `--mount` flags share only your Claude login between containers; settings, plugins, and MCP server configurations remain container-local.
 
 </details>
 
@@ -431,6 +435,10 @@ You can open as many `docker exec` sessions as you want.
 ## Author
 
 Created by [Yanzhe Bekkemoen](https://github.com/yanzheb), with assistance from [Claude](https://claude.ai) by Anthropic.
+
+## Contributing
+
+Contributions are welcome. Feel free to open an issue or pull request.
 
 ## License
 
