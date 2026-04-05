@@ -343,7 +343,7 @@ Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. 
 Then create a container from the derived image by passing the tag as an extra argument to the script (see [Step 5.4](#step-54---create-a-container-for-a-new-project)):
 
 ```bash
-cd ~/my-paper
+cd ~/my-document
 /path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
 ```
 
