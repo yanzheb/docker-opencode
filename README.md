@@ -10,19 +10,19 @@ A Dockerfile and a guide for running [Claude Code](https://code.claude.com/) in 
 
 ## Why This Repo?
 
-Coding agents are useful, but I'm not comfortable giving them full access to my machine. I wanted to use Claude Code without giving up privacy or control, so I looked for a way to run it inside Docker.
+Coding agents are useful, but I won't give them full access to my machine. I wanted to use Claude Code without giving up privacy or control, so I looked for a way to run it inside Docker.
 
-I first tried [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/), but they use microVMs that don't support GPU passthrough, and I need the GPU. They're also still experimental, so things may change.
+I first tried [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/), but they use microVMs that don't support GPU passthrough, and I need the GPU. They're also still experimental.
 
 I also looked at a few community projects:
 
-- [cco](https://github.com/nikvdp/cco) is nice, but it prefers native OS sandboxing and only falls back to Docker. I wanted to own the Dockerfile so I could set up GPU passthrough and tweak the image myself.
-- [jai](https://github.com/stanford-scs/jai) has a clever lightweight approach using Linux kernel APIs, but it's Linux-only and I also need it to work on macOS.
-- [claudebox](https://github.com/RchGrav/claudebox) is a nice all-in-one setup with language profiles, firewall rules, and tmux, but it's more than I needed.
+- [cco](https://github.com/nikvdp/cco) works well, but it prefers native OS sandboxing and only falls back to Docker. I wanted to own the Dockerfile so I could set up GPU passthrough and tweak the image myself.
+- [jai](https://github.com/stanford-scs/jai) takes a lightweight approach using Linux kernel APIs, but it's Linux-only. I also need macOS support.
+- [claudebox](https://github.com/RchGrav/claudebox) bundles language profiles, firewall rules, and tmux into one setup, which is more than I needed.
 
 So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to change. Docker keeps the base image updated, so I don't have to.
 
-**Switching to a different coding agent is easy.** Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like OpenCode, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
+Switching to a different coding agent is easy. Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like OpenCode, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
 
 ## Quick Start
 
@@ -138,7 +138,7 @@ sudo systemctl status docker
 sudo docker run hello-world
 ```
 
-If you see `Active: active (running)` from the first command and the "Hello from Docker!" message from the second, the engine is working.
+If the first command shows `Active: active (running)` and the second prints "Hello from Docker!", the engine is working.
 
 ## Section 3 - Docker Post-Installation Setup
 
@@ -157,7 +157,7 @@ You must log out and log back in for the group change to take effect. Alternativ
 
 The `docker` group grants root-equivalent privileges on the host. Only add trusted users.
 
-If running in a VM, a full reboot may be needed instead of just logging out.
+On a VM, a full reboot may replace the logout step.
 
 ### Step 3.2 - Enable Docker to start on boot
 
@@ -222,7 +222,7 @@ Run `nvidia-ctk` to register the NVIDIA runtime with Docker and set it as the de
 sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
 ```
 
-This edits `/etc/docker/daemon.json` to register the `nvidia` runtime and set `"default-runtime": "nvidia"`. With this set, all containers automatically use the NVIDIA runtime, so you don't need `--gpus` or `--runtime=nvidia` on every `docker run` command.
+This edits `/etc/docker/daemon.json` to register the `nvidia` runtime and set `"default-runtime": "nvidia"`. All containers then use the NVIDIA runtime automatically. You can drop `--gpus` and `--runtime=nvidia` from every `docker run` command.
 
 Source: [NVIDIA Container Toolkit Install Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) and [NVIDIA Container Toolkit User Guide (`--set-as-default` flag)](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html)
 
@@ -292,7 +292,7 @@ macOS: install Docker Desktop via [Homebrew](https://brew.sh/):
 brew install --cask docker-desktop
 ```
 
-Then open Docker Desktop from your Applications folder or via Spotlight (`Cmd + Space`, type "Docker"). Follow the on-screen prompts to grant permissions and wait for the whale icon to appear in your menu bar.
+Then open Docker Desktop from your Applications folder or via Spotlight (`Cmd + Space`, type "Docker"). Follow the on-screen prompts to grant permissions. Wait for the whale icon to appear in your menu bar.
 
 Source: [docs.docker.com/desktop/setup/install/mac-install](https://docs.docker.com/desktop/setup/install/mac-install/)
 
@@ -308,7 +308,7 @@ A single Dockerfile builds on the official Claude Code sandbox template and adds
 
 - [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude)
 
-The official sandbox template runs as a non-root user called `agent` with sudo access. If you need to add system-level installations, switch to `USER root` in the Dockerfile and back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
+The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
 ### Step 5.3 - Build the image (one-time setup)
 
@@ -325,7 +325,7 @@ docker build -t claude-code-gpu \
 docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/
 ```
 
-You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of using a cached layer.
+You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of reusing a cached layer.
 
 ### Step 5.4 - Create a container for a new project
 
@@ -336,7 +336,7 @@ cd ~/my-project
 /path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
 ```
 
-The script creates the shared credential files under `~/.claude-creds/` if they aren't there yet (safe to run more than once), derives a container name from the current directory (e.g., `my-project-a1b2-claude`), and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the right resume command. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
+The script creates the shared credential files under `~/.claude-creds/` if missing (safe to re-run). It then derives a container name from the current directory (e.g., `my-project-a1b2-claude`) and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the resume command. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
 
 Inside the container, launch Claude Code and authenticate:
 
@@ -361,7 +361,7 @@ chmod 600 ~/.claude-creds/.credentials.json ~/.claude-creds/.claude.json
 
 `chmod 700`/`600` restrict the directory and files to your user so nobody else on the system can read your login tokens.
 
-Then create the container from the project directory. If you want a custom container name, skip the `cname` block and pass your own value to `--name` (e.g., `--name webapp-claude`):
+Then create the container from the project directory. For a custom container name, skip the `cname` block and pass your own value to `--name` (e.g., `--name webapp-claude`):
 
 ```bash
 cd ~/my-project
@@ -401,7 +401,7 @@ After the first run, always use `start` to resume the container. This preserves 
 docker start -ai my-project-a1b2-claude
 ```
 
-This is your day-to-day command. Substitute your container name, or use the filter commands below to find it. You can run it from any directory since the project directory from Step 5.4 is permanently bound to `/workspace`.
+This is your day-to-day command. Substitute your container name, or use the filter commands below to find it. You can run it from any directory, since the project directory from Step 5.4 is permanently bound to `/workspace`.
 
 When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
 
