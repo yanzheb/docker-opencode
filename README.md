@@ -1,5 +1,9 @@
 # Run Claude Code in Docker with GPU Support
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-claude-code-setup)
+[![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aclaude--code-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
+
 Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
