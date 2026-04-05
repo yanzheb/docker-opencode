@@ -4,7 +4,7 @@
 ![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-claude-code-setup)
 [![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aclaude--code-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
 
-A Dockerfile and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
+Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
@@ -20,7 +20,7 @@ I also looked at a few community projects:
 - [jai](https://github.com/stanford-scs/jai) takes a lightweight approach using Linux kernel APIs, but it's Linux-only. I also need macOS support.
 - [claudebox](https://github.com/RchGrav/claudebox) bundles language profiles, firewall rules, and tmux into one setup, which is more than I needed.
 
-So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to change. Docker keeps the base image updated, so I don't have to.
+So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to extend. I can bake in whatever tools a project needs so Claude Code can run them itself to verify its work. On a paper repo, that means a full LaTeX toolchain, letting the agent compile, read the errors, and fix them on its own. Docker keeps the base image updated, so I don't have to.
 
 Switching to a different coding agent is easy. Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like OpenCode, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
 
@@ -212,7 +212,7 @@ sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 ```
 
-The official docs show pinning to a specific version (e.g., `nvidia-container-toolkit=1.18.2-1`). For most users, installing the latest version without pinning (as above) is simpler. Pin explicitly if you need reproducible deployments.
+The official docs show pinning to a specific version (e.g., `nvidia-container-toolkit=1.18.2-1`). Pin explicitly if you need reproducible deployments, otherwise the unpinned install above is simpler.
 
 ### Step 4.4 - Configure NVIDIA as the default Docker runtime
 
@@ -304,9 +304,10 @@ docker --version
 
 ### Step 5.2 - Review the Dockerfiles
 
-A single Dockerfile builds on the official Claude Code sandbox template and adds truecolor terminal support. Two build arguments (`NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES`) switch GPU access on or off at build time. They are empty by default (no GPU). Pass them as `--build-arg` to produce a GPU-enabled image.
+The base Dockerfile builds on the official Claude Code sandbox template and adds truecolor terminal support. Two build arguments (`NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES`) switch GPU access on or off at build time. They are empty by default (no GPU). Pass them as `--build-arg` to produce a GPU-enabled image. A second Dockerfile layers a full LaTeX toolchain on top of the base, as an example of how to extend the image for a project.
 
-- [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude)
+- [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude) (base image)
+- [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex) (derived image adding `texlive-full` and `latexmk`)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
@@ -359,7 +360,7 @@ cd ~/my-project
 /path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
 ```
 
-Pass an optional third argument to use a derived image instead of the default:
+Pass an optional second argument to use a derived image instead of the default:
 
 ```bash
 /path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
