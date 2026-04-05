@@ -129,16 +129,6 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-This installs five packages:
-
-| Package | Purpose |
-|---|---|
-| `docker-ce` | Docker daemon |
-| `docker-ce-cli` | CLI client |
-| `containerd.io` | Container runtime |
-| `docker-buildx-plugin` | BuildKit build plugin |
-| `docker-compose-plugin` | Docker Compose v2 |
-
 ### Step 2.5 - Verify the installation
 
 On Ubuntu 24.04, Docker starts automatically after installation. Confirm it's running and pull a test image:
@@ -242,7 +232,8 @@ Verify the result:
 cat /etc/docker/daemon.json
 ```
 
-It should look like this:
+<details>
+<summary><strong>Expected output</strong></summary>
 
 ```json
 {
@@ -255,6 +246,8 @@ It should look like this:
     }
 }
 ```
+
+</details>
 
 Restart Docker to apply the new configuration:
 
@@ -270,19 +263,24 @@ Source: [docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample
 docker run --rm nvidia/cuda:13.2.0-base-ubuntu24.04 nvidia-smi
 ```
 
-This pulls NVIDIA's official CUDA base image and runs `nvidia-smi` inside the container. You should see output listing your GPU(s), driver version, and CUDA version, matching (or compatible with) the host driver.
+You should see output listing your GPU(s), driver version, and CUDA version, matching (or compatible with) the host driver.
+
+<details>
+<summary><strong>Notes on the command and image tag</strong></summary>
+
+This pulls NVIDIA's official CUDA base image and runs `nvidia-smi` inside the container.
 
 Because the NVIDIA runtime was set as the default above, no `--gpus` flag is needed. Official CUDA images set the `NVIDIA_VISIBLE_DEVICES` environment variable internally, and the default runtime picks that up automatically. If the command fails, try adding `--gpus all` explicitly to rule out a default-runtime configuration issue.
 
 Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CUDA version. Check your host CUDA version with `nvidia-smi` and browse available tags at [hub.docker.com/r/nvidia/cuda](https://hub.docker.com/r/nvidia/cuda).
 
+</details>
+
 ## Section 5 - Running Claude Code in a Docker Container
 
 This section covers both GPU and non-GPU setups. Use the GPU variant if you completed Section 4. Use the no-GPU variant for Ubuntu without a GPU or macOS.
 
-Note on GPU passthrough: [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/) (CLI: `sbx`) use microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. Docker Sandboxes is experimental and under active development, so this may change. The GPU approach below bypasses Docker Sandboxes and runs Claude Code in a standard Docker container with `--gpus all`.
-
-This workaround is adapted from community approaches (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
+The setup below is adapted from community guides (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
 
 ### Step 5.1 - Install Docker (macOS only)
 
@@ -419,7 +417,7 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail. Use `exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
+`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
 ## Useful Commands
 
@@ -427,8 +425,7 @@ You can open as many `docker exec` sessions as you want.
 |---|---|
 | Build image (GPU) | `docker build -t claude-code-gpu --build-arg NVIDIA_VISIBLE_DEVICES=all --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility -f dockerfiles/Dockerfile.claude dockerfiles/` |
 | Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/` |
-| Create container (GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
-| Create container (no GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
+| Create a container for a new project | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
 | Resume a stopped container | `docker start -ai <name>` |
 | Open extra shell in running container | `docker exec -it <name> /bin/bash` |
 | Stop a container | `docker stop <name>` |
