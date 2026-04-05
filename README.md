@@ -336,7 +336,7 @@ cd ~/my-project
 /path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
 ```
 
-The script creates the shared credential files under `~/.claude-creds/` if missing (safe to re-run). It then derives a container name from the current directory (e.g., `my-project-a1b2-claude`) and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the resume command. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
+The script creates the shared credential files under `~/.claude-creds/` if missing (safe to re-run). It then derives a container name from the current directory (e.g., `my-project-a1b2-claude`) and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the command to resume it, or to open a shell in it if it is already running. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
 
 Inside the container, launch Claude Code and authenticate:
 
