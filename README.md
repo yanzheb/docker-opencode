@@ -365,17 +365,18 @@ Then create the container from the project directory. For a custom container nam
 
 ```bash
 cd ~/my-project
+workspace="$(pwd -P)"
 
 # Optional: derive the container name from the current directory.
 # Skip this block if you'd rather pass your own name to --name below.
-dir_base="$(basename "$(pwd)" | tr -cs 'a-zA-Z0-9_.\n-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
-dir_hash="$(printf '%s' "$(pwd)" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
+dir_base="$(basename "${workspace}" | tr -cs 'a-zA-Z0-9_.-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
+dir_hash="$(printf '%s' "${workspace}" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
 cname="${dir_base:-dir}-${dir_hash}-claude"
 
 # GPU:
 docker run -it --gpus all \
     --name "${cname}" \
-    --mount type=bind,src="$(pwd)",dst=/workspace \
+    --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
     --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-gpu
@@ -383,7 +384,7 @@ docker run -it --gpus all \
 # No GPU:
 docker run -it \
     --name "${cname}" \
-    --mount type=bind,src="$(pwd)",dst=/workspace \
+    --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
     --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
     claude-code-nogpu

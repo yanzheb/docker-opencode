@@ -48,10 +48,11 @@ md5_short() {
 derive_container_name() {
   local dir_base
   local dir_hash
-  dir_base="$(basename "$(pwd)" \
-    | tr -cs 'a-zA-Z0-9_.\n-' '-' \
+  local workspace="$1"
+  dir_base="$(basename "${workspace}" \
+    | tr -cs 'a-zA-Z0-9_.-' '-' \
     | sed 's/^[^a-zA-Z0-9]*//')"
-  dir_hash="$(printf '%s' "$(pwd)" | md5_short)"
+  dir_hash="$(printf '%s' "${workspace}" | md5_short)"
   echo "${dir_base:-dir}-${dir_hash}-claude"
 }
 
@@ -125,8 +126,11 @@ main() {
   check_prereqs "${image}" "${variant}"
   ensure_creds
 
+  local workspace
+  workspace="$(pwd -P)"
+
   local cname
-  cname="$(derive_container_name)"
+  cname="$(derive_container_name "${workspace}")"
 
   local running
   if running="$(docker container inspect \
@@ -144,8 +148,9 @@ main() {
   fi
 
   echo "Creating container '${cname}' from image '${image}'..."
-  echo "  workspace: $(pwd) -> /workspace"
-  echo "  creds:     ${CREDS_DIR} -> /home/agent/.claude/"
+  echo "  workspace: ${workspace} -> /workspace"
+  echo "  creds:     ${CREDS_FILE} -> /home/agent/.claude/.credentials.json"
+  echo "             ${CLAUDE_JSON} -> /home/agent/.claude.json"
   echo
 
   # The "${gpu_args[@]+...}" form expands the array only if it is set.
@@ -153,7 +158,7 @@ main() {
   # array expansion under `set -u`.
   exec docker run -it ${gpu_args[@]+"${gpu_args[@]}"} \
     --name "${cname}" \
-    --mount "type=bind,src=$(pwd),dst=/workspace" \
+    --mount "type=bind,src=${workspace},dst=/workspace" \
     --mount "type=bind,src=${CREDS_FILE},dst=/home/agent/.claude/.credentials.json" \
     --mount "type=bind,src=${CLAUDE_JSON},dst=/home/agent/.claude.json" \
     "${image}"
