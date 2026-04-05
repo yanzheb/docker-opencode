@@ -28,7 +28,11 @@ err() {
 }
 
 usage() {
-  err "Usage: $0 gpu|nogpu"
+  err "Usage: $0 gpu|nogpu [image-tag]"
+  err ""
+  err "  image-tag  optional image to use instead of the default"
+  err "             (claude-code-gpu or claude-code-nogpu). Useful for"
+  err "             derived images like claude-code-latex."
 }
 
 # Prints a 4-char md5 hash of stdin, using md5sum (Linux) or md5 (macOS).
@@ -73,7 +77,6 @@ ensure_creds() {
 # Verifies docker is installed and the requested image exists locally.
 check_prereqs() {
   local image="$1"
-  local variant="$2"
 
   if ! command -v docker >/dev/null 2>&1; then
     err "Error: 'docker' not found on PATH."
@@ -84,21 +87,26 @@ check_prereqs() {
   if ! docker image inspect "${image}" >/dev/null 2>&1; then
     err "Error: image '${image}' not found locally."
     err "Build it first (README Step 5.3):"
-    if [[ "${variant}" == "gpu" ]]; then
+    if [[ "${image}" == "claude-code-gpu" ]]; then
       err "  docker build -t ${image} \\"
       err "    --build-arg NVIDIA_VISIBLE_DEVICES=all \\"
       err "    --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \\"
       err "    -f dockerfiles/Dockerfile.claude dockerfiles/"
-    else
+    elif [[ "${image}" == "claude-code-nogpu" ]]; then
       err "  docker build -t ${image} \\"
       err "    -f dockerfiles/Dockerfile.claude dockerfiles/"
+    else
+      err "  docker build -t ${image} \\"
+      err "    -f dockerfiles/Dockerfile.<name>.<variant> dockerfiles/"
+      err ""
+      err "Derived images also require the base image to exist first."
     fi
     return 1
   fi
 }
 
 main() {
-  if [[ $# -ne 1 ]]; then
+  if [[ $# -lt 1 || $# -gt 2 ]]; then
     usage
     exit 2
   fi
@@ -122,7 +130,14 @@ main() {
       ;;
   esac
 
-  check_prereqs "${image}" "${variant}"
+  # Optional override: use a custom image tag (e.g. a derived image that
+  # layers extra tooling on top of the base). The variant still controls
+  # whether --gpus all is passed to docker run.
+  if [[ $# -eq 2 ]]; then
+    image="$2"
+  fi
+
+  check_prereqs "${image}"
   ensure_creds
 
   local workspace

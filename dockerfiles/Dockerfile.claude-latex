@@ -1,0 +1,22 @@
+# Adds a full LaTeX toolchain on top of the base Claude Code image.
+# Build the base first (see README Step 5.3), then:
+#   docker build -t claude-code-latex \
+#       -f dockerfiles/Dockerfile.claude-latex dockerfiles/
+#
+# Pass --build-arg BASE_IMAGE=claude-code-gpu to layer on the GPU base instead.
+ARG BASE_IMAGE=claude-code-nogpu
+FROM ${BASE_IMAGE}
+
+# texlive-full is large (several GB) but pulls in every standard package, so
+# projects do not need to guess which texlive-* subset they need. latexmk is
+# the usual top-level build driver.
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+         texlive-full \
+         latexmk \
+    && rm -rf /var/lib/apt/lists/*
+USER agent
+
+WORKDIR /workspace
+CMD ["/bin/bash"]

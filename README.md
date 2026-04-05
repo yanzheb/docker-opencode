@@ -327,6 +327,29 @@ docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/
 
 You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of reusing a cached layer.
 
+<details>
+<summary><strong>Project-specific extras.</strong> Click to expand. Covers tools too large to bake into the default image, like a full LaTeX toolchain, added via a thin derived Dockerfile.</summary>
+
+Add a thin Dockerfile that layers on top of the base image. The repo ships one example, [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex), which installs `texlive-full` and `latexmk` on top of `claude-code-nogpu`. Build it after the base image:
+
+```bash
+docker build -t claude-code-latex \
+    -f dockerfiles/Dockerfile.claude-latex dockerfiles/
+```
+
+Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
+
+Then create a container from the derived image by passing the tag as an extra argument to the script (see [Step 5.4](#step-54---create-a-container-for-a-new-project)):
+
+```bash
+cd ~/my-paper
+/path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
+```
+
+The `gpu` / `nogpu` variant still controls whether `--gpus all` is passed to `docker run`. The second argument just overrides the default image tag. Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
+
+</details>
+
 ### Step 5.4 - Create a container for a new project
 
 Each project gets its own named container. Run the first-time-setup script from the project directory:
@@ -334,6 +357,12 @@ Each project gets its own named container. Run the first-time-setup script from 
 ```bash
 cd ~/my-project
 /path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
+```
+
+Pass an optional third argument to use a derived image instead of the default:
+
+```bash
+/path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
 ```
 
 The script creates the shared credential files under `~/.claude-creds/` if missing (safe to re-run). It then derives a container name from the current directory (e.g., `my-project-a1b2-claude`) and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the command to resume it, or to open a shell in it if it is already running. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
@@ -426,6 +455,7 @@ You can open as many `docker exec` sessions as you want.
 |---|---|
 | Build image (GPU) | `docker build -t claude-code-gpu --build-arg NVIDIA_VISIBLE_DEVICES=all --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility -f dockerfiles/Dockerfile.claude dockerfiles/` |
 | Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/` |
+| Build LaTeX image | `docker build -t claude-code-latex -f dockerfiles/Dockerfile.claude-latex dockerfiles/` |
 | Create a container for a new project | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
 | Resume a stopped container | `docker start -ai <name>` |
 | Open extra shell in running container | `docker exec -it <name> /bin/bash` |
