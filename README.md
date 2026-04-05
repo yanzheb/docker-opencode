@@ -16,7 +16,9 @@ I also looked at a few community projects:
 - [jai](https://github.com/stanford-scs/jai) has a clever lightweight approach using Linux kernel APIs, but it's Linux-only and I also need it to work on macOS.
 - [claudebox](https://github.com/RchGrav/claudebox) is a nice all-in-one setup with language profiles, firewall rules, and tmux, but it's more than I needed.
 
-So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to change. Docker keeps the base image updated, so I don't have to. They also publish [images for other coding agents](https://hub.docker.com/r/docker/sandbox-templates/tags), so if I want to try something like OpenCode later, it's a small change.
+So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to change. Docker keeps the base image updated, so I don't have to.
+
+**Switching to a different coding agent is easy.** Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like OpenCode, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
 
 ## Quick Start
 
