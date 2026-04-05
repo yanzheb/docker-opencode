@@ -322,7 +322,27 @@ You only need to rebuild if you change the Dockerfile or want to pull updated ba
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. Before your first container, create the shared credential files on the host (one-time setup):
+Each project gets its own named container. Run the first-time-setup script from the project directory:
+
+```bash
+cd ~/my-project
+/path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
+```
+
+The script creates the shared credential files under `~/.claude-creds/` if they aren't there yet (safe to run more than once), derives a container name from the current directory (e.g., `my-project-a1b2-claude`), and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the right resume command. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
+
+Inside the container, launch Claude Code and authenticate:
+
+```bash
+claude
+```
+
+Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
+
+<details>
+<summary><strong>Manual alternative</strong> (what the script does, in case you'd rather run it by hand or want to check the script first)</summary>
+
+Create the shared credential files on the host (one-time):
 
 ```bash
 mkdir -p ~/.claude-creds
@@ -332,9 +352,9 @@ echo '{}' > ~/.claude-creds/.claude.json
 chmod 600 ~/.claude-creds/.credentials.json ~/.claude-creds/.claude.json
 ```
 
-The `chmod 700` restricts the directory so only your user can access it. The `chmod 600` ensures the credential files are readable and writable only by you, preventing other users on the system from reading your login tokens.
+`chmod 700`/`600` restrict the directory and files to your user so nobody else on the system can read your login tokens.
 
-Then create a container from the project directory:
+Then create the container from the project directory:
 
 ```bash
 cd ~/my-project
@@ -361,18 +381,9 @@ docker run -it \
     claude-code-nogpu
 ```
 
-- The container is named after the working directory plus a short hash of the full path for uniqueness (e.g., `my-project-a1b2-claude`), so directories with the same basename in different locations get distinct containers. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`).
-- The credential `--mount` flags bind-mount only your Claude login credentials between the host and all containers. You authenticate once and every container picks it up. Settings, plugins, and MCP server configurations remain container-local.
+The hash in the name disambiguates directories that share a basename but live in different locations. For a custom name, replace `"${cname}"` with your own (e.g., `--name webapp-claude`). The credential `--mount` flags share only your Claude login between containers; settings, plugins, and MCP server configurations remain container-local.
 
-Inside the container, launch Claude Code and authenticate:
-
-```bash
-claude
-```
-
-Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account.
-
-To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
+</details>
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
