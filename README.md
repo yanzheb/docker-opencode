@@ -6,11 +6,17 @@ Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in D
 
 ## Why This Repo?
 
-Coding agents are incredibly useful, but handing them unrestricted access to your machine is a trade-off not everyone is comfortable with. I wanted the productivity benefits of Claude Code without sacrificing privacy or control, so I looked for a way to run it sandboxed in Docker.
+Coding agents are useful, but I'm not comfortable giving them full access to my machine. I wanted to use Claude Code without giving up privacy or control, so I looked for a way to run it inside Docker.
 
-[Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/) (experimental, under active development) were a natural starting point, but they rely on microVMs that don't support GPU passthrough, which was a dealbreaker for my workflow. This repo documents the setup I built to work around that limitation.
+I first tried [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/), but they use microVMs that don't support GPU passthrough, and I need the GPU. They're also still experimental, so things may change.
 
-Note: Claude Code also offers [native sandboxing](https://code.claude.com/docs/en/sandboxing) using OS-level primitives (bubblewrap on Linux, Seatbelt on macOS). Native sandboxing provides filesystem and network isolation without Docker and does not block GPU access. If you don't need full container isolation, that may be a simpler option.
+I also looked at a few community projects:
+
+- [cco](https://github.com/nikvdp/cco) is nice, but it prefers native OS sandboxing and only falls back to Docker. I wanted to own the Dockerfile so I could set up GPU passthrough and tweak the image myself.
+- [jai](https://github.com/stanford-scs/jai) has a clever lightweight approach using Linux kernel APIs, but it's Linux-only and I also need it to work on macOS.
+- [claudebox](https://github.com/RchGrav/claudebox) is a nice all-in-one setup with language profiles, firewall rules, and tmux, but it's more than I needed.
+
+So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to change. Docker keeps the base image updated, so I don't have to. They also publish [images for other coding agents](https://hub.docker.com/r/docker/sandbox-templates/tags), so if I want to try something like OpenCode later, it's a small change.
 
 ## Quick Start
 
