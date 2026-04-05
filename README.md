@@ -4,7 +4,7 @@
 ![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-claude-code-setup)
 [![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aclaude--code-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
 
-Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
+A Dockerfile and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
@@ -278,7 +278,7 @@ Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CU
 
 ## Section 5 - Running Claude Code in a Docker Container
 
-This section covers both GPU and non-GPU setups. Use the GPU variant if you completed Section 4; use the no-GPU variant for Ubuntu without a GPU or macOS.
+This section covers both GPU and non-GPU setups. Use the GPU variant if you completed Section 4. Use the no-GPU variant for Ubuntu without a GPU or macOS.
 
 Note on GPU passthrough: [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/) (CLI: `sbx`) use microVMs that do not support GPU passthrough. The official [Docker Sandboxes Claude Code page](https://docs.docker.com/ai/sandboxes/agents/claude-code/) does not document GPU access. Docker Sandboxes is experimental and under active development, so this may change. The GPU approach below bypasses Docker Sandboxes and runs Claude Code in a standard Docker container with `--gpus all`.
 
@@ -306,10 +306,9 @@ docker --version
 
 ### Step 5.2 - Review the Dockerfiles
 
-Both Dockerfiles build on the official Claude Code sandbox template and add truecolor terminal support and the [pixi](https://github.com/prefix-dev/pixi/) package manager. The GPU variant additionally sets NVIDIA environment variables for GPU access.
+A single Dockerfile builds on the official Claude Code sandbox template and adds truecolor terminal support. Two build arguments (`NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES`) switch GPU access on or off at build time. They are empty by default (no GPU). Pass them as `--build-arg` to produce a GPU-enabled image.
 
-- GPU: [`dockerfiles/Dockerfile.claude-gpu`](dockerfiles/Dockerfile.claude-gpu)
-- No GPU: [`dockerfiles/Dockerfile.claude-nogpu`](dockerfiles/Dockerfile.claude-nogpu)
+- [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. If you need to add system-level installations, switch to `USER root` in the Dockerfile and back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
@@ -319,10 +318,13 @@ From the repo root:
 
 ```bash
 # GPU:
-docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/
+docker build -t claude-code-gpu \
+    --build-arg NVIDIA_VISIBLE_DEVICES=all \
+    --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    -f dockerfiles/Dockerfile.claude dockerfiles/
 
 # No GPU:
-docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/
+docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/
 ```
 
 You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of using a cached layer.
@@ -389,7 +391,7 @@ docker run -it \
     claude-code-nogpu
 ```
 
-The hash in the derived name disambiguates directories that share a basename but live in different locations. The credential `--mount` flags share only your Claude login between containers; settings, plugins, and MCP server configurations remain container-local.
+The hash in the derived name disambiguates directories that share a basename but live in different locations. The credential `--mount` flags share only your Claude login between containers. Settings, plugins, and MCP server configurations remain container-local.
 
 </details>
 
@@ -417,14 +419,14 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail; use `exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
+`docker start -ai` only works on a stopped container. Use `docker exec` for extra sessions in a running container. If the container is already running, `start` will fail. Use `exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
 ## Useful Commands
 
 | Task | Command |
 |---|---|
-| Build image (GPU) | `docker build -t claude-code-gpu -f dockerfiles/Dockerfile.claude-gpu dockerfiles/` |
-| Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude-nogpu dockerfiles/` |
+| Build image (GPU) | `docker build -t claude-code-gpu --build-arg NVIDIA_VISIBLE_DEVICES=all --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility -f dockerfiles/Dockerfile.claude dockerfiles/` |
+| Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/` |
 | Create container (GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
 | Create container (no GPU) | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
 | Resume a stopped container | `docker start -ai <name>` |

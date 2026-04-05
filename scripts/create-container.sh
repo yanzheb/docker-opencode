@@ -84,8 +84,15 @@ check_prereqs() {
   if ! docker image inspect "${image}" >/dev/null 2>&1; then
     err "Error: image '${image}' not found locally."
     err "Build it first (README Step 5.3):"
-    err "  docker build -t ${image} \\"
-    err "    -f dockerfiles/Dockerfile.claude-${variant} dockerfiles/"
+    if [[ "${variant}" == "gpu" ]]; then
+      err "  docker build -t ${image} \\"
+      err "    --build-arg NVIDIA_VISIBLE_DEVICES=all \\"
+      err "    --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \\"
+      err "    -f dockerfiles/Dockerfile.claude dockerfiles/"
+    else
+      err "  docker build -t ${image} \\"
+      err "    -f dockerfiles/Dockerfile.claude dockerfiles/"
+    fi
     return 1
   fi
 }
