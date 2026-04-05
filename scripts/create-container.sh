@@ -50,8 +50,7 @@ derive_container_name() {
   local dir_hash
   local workspace="$1"
   dir_base="$(basename "${workspace}" \
-    | tr -cs 'a-zA-Z0-9_.-' '-' \
-    | sed 's/^[^a-zA-Z0-9]*//')"
+    | sed -E 's/[^a-zA-Z0-9_.-]+/-/g; s/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$//g')"
   dir_hash="$(printf '%s' "${workspace}" | md5_short)"
   echo "${dir_base:-dir}-${dir_hash}-claude"
 }

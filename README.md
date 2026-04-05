@@ -369,7 +369,7 @@ workspace="$(pwd -P)"
 
 # Optional: derive the container name from the current directory.
 # Skip this block if you'd rather pass your own name to --name below.
-dir_base="$(basename "${workspace}" | tr -cs 'a-zA-Z0-9_.-' '-' | sed 's/^[^a-zA-Z0-9]*//')"
+dir_base="$(basename "${workspace}" | sed -E 's/[^a-zA-Z0-9_.-]+/-/g; s/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$//g')"
 dir_hash="$(printf '%s' "${workspace}" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
 cname="${dir_base:-dir}-${dir_hash}-claude"
 
