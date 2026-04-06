@@ -425,6 +425,16 @@ You can open as many `docker exec` sessions as you want.
 
 `docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials are stored on the host in `~/.claude/` and `~/.claude.json`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
+To list your containers:
+
+```bash
+# List running containers:
+docker ps
+
+# Include stopped containers:
+docker ps -a
+```
+
 ## Author
 
 Created by [Yanzhe Bekkemoen](https://github.com/yanzheb), with assistance from [Claude](https://claude.ai) by Anthropic.
