@@ -340,46 +340,25 @@ docker build -t claude-code-latex \
 
 Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
 
-Then create a container from the derived image by passing the tag as an extra argument to the script (see [Step 5.4](#step-54---create-a-container-for-a-new-project)):
+Then create a container from the derived image by replacing the image name in the `docker run` command from [Step 5.4](#step-54---create-a-container-for-a-new-project). For example, to use the LaTeX image without GPU support:
 
 ```bash
 cd ~/my-document
-/path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
+docker run -it \
+    --name my-document-claude \
+    --mount type=bind,src="$(pwd -P)",dst=/workspace \
+    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
+    claude-code-latex
 ```
 
-The `gpu` / `nogpu` variant still controls whether `--gpus all` is passed to `docker run`. The second argument just overrides the default image tag. Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
+Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
 
 </details>
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. Run the first-time-setup script from the project directory:
-
-```bash
-cd ~/my-project
-/path/to/this/repo/scripts/create-container.sh gpu     # or: nogpu
-```
-
-Pass an optional second argument to use a derived image instead of the default:
-
-```bash
-/path/to/this/repo/scripts/create-container.sh nogpu claude-code-latex
-```
-
-The script creates the shared credential files under `~/.claude-creds/` if missing (safe to re-run). It then derives a container name from the current directory (e.g., `my-project-a1b2-claude`) and runs `docker run` with the right `--mount` flags. If a container for this directory already exists, the script stops and prints the command to resume it, or to open a shell in it if it is already running. See [Step 5.5](#step-55---resume-an-existing-container-daily-workflow).
-
-Inside the container, launch Claude Code and authenticate:
-
-```bash
-claude
-```
-
-Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
-
-<details>
-<summary><strong>Manual alternative</strong> (what the script does, in case you'd rather run it by hand or want to check the script first)</summary>
-
-Create the shared credential files on the host (one-time):
+Each project gets its own named container. First, create the shared credential files on the host (one-time, safe to re-run):
 
 ```bash
 mkdir -p ~/.claude-creds
@@ -422,7 +401,13 @@ docker run -it \
 
 The hash in the derived name disambiguates directories that share a basename but live in different locations. The credential `--mount` flags share only your Claude login between containers. Settings, plugins, and MCP server configurations remain container-local.
 
-</details>
+Inside the container, launch Claude Code and authenticate:
+
+```bash
+claude
+```
+
+Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
