@@ -135,10 +135,9 @@ On Ubuntu 24.04, Docker starts automatically after installation. Confirm it's ru
 
 ```bash
 sudo systemctl status docker
-sudo docker run hello-world
 ```
 
-If the first command shows `Active: active (running)` and the second prints "Hello from Docker!", the engine is working.
+If the output shows `Active: active (running)`, the engine is working. Step 3.3 runs a full end-to-end verification.
 
 ## Section 3 - Docker Post-Installation Setup
 
@@ -185,11 +184,10 @@ Source: [docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/instal
 ### Step 4.1 - Install prerequisites
 
 ```bash
-sudo apt-get update && sudo apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg2
+sudo apt-get update && sudo apt-get install -y --no-install-recommends gnupg2
 ```
+
+`ca-certificates` and `curl` were already installed in Step 2.1.
 
 ### Step 4.2 - Add the NVIDIA Container Toolkit repository
 
@@ -268,9 +266,7 @@ You should see output listing your GPU(s), driver version, and CUDA version, mat
 <details>
 <summary><strong>Notes on the command and image tag</strong></summary>
 
-This pulls NVIDIA's official CUDA base image and runs `nvidia-smi` inside the container.
-
-Because the NVIDIA runtime was set as the default above, no `--gpus` flag is needed. Official CUDA images set the `NVIDIA_VISIBLE_DEVICES` environment variable internally, and the default runtime picks that up automatically. If the command fails, try adding `--gpus all` explicitly to rule out a default-runtime configuration issue.
+This pulls NVIDIA's official CUDA base image and runs `nvidia-smi` inside the container. If the command fails, try adding `--gpus all` explicitly to rule out a default-runtime configuration issue.
 
 Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CUDA version. Check your host CUDA version with `nvidia-smi` and browse available tags at [hub.docker.com/r/nvidia/cuda](https://hub.docker.com/r/nvidia/cuda).
 
@@ -304,7 +300,7 @@ docker --version
 
 ### Step 5.2 - Review the Dockerfiles
 
-The base Dockerfile builds on the official Claude Code sandbox template and adds truecolor terminal support. Two build arguments (`NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES`) switch GPU access on or off at build time. They are empty by default (no GPU). Pass them as `--build-arg` to produce a GPU-enabled image. A second Dockerfile layers a full LaTeX toolchain on top of the base, as an example of how to extend the image for a project.
+Both Dockerfiles are short and commented. Review them before building:
 
 - [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude) (base image)
 - [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex) (derived image adding `texlive-full` and `latexmk`)
@@ -340,15 +336,15 @@ docker build -t claude-code-latex \
 
 Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
 
-Then create a container from the derived image by replacing the image name in the `docker run` command from [Step 5.4](#step-54---create-a-container-for-a-new-project). For example, to use the LaTeX image without GPU support:
+Then create a container from the derived image by replacing the image name in the `docker run` command from [Step 5.4](#step-54---create-a-container-for-a-new-project). Make sure the credential files from Step 5.4 exist on the host before running the command. For example, to use the LaTeX image without GPU support:
 
 ```bash
 cd ~/my-document
 docker run -it \
     --name my-document-claude \
     --mount type=bind,src="$(pwd -P)",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
+    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
     claude-code-latex
 ```
 
@@ -358,17 +354,15 @@ Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same patte
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. First, create the shared credential files on the host (one-time, safe to re-run):
+Each project gets its own named container. First, make sure the credential files that Claude Code writes to exist on the host so the bind mount works (one-time, safe to re-run):
 
 ```bash
-mkdir -p ~/.claude-creds
-chmod 700 ~/.claude-creds
-touch ~/.claude-creds/.credentials.json
-echo '{}' > ~/.claude-creds/.claude.json
-chmod 600 ~/.claude-creds/.credentials.json ~/.claude-creds/.claude.json
+mkdir -p ~/.claude
+touch ~/.claude/.credentials.json
+[ -f ~/.claude.json ] || echo '{}' > ~/.claude.json
 ```
 
-`chmod 700`/`600` restrict the directory and files to your user so nobody else on the system can read your login tokens.
+If you have already run `claude` on the host, these files exist and you can skip this step.
 
 Then create the container from the project directory. For a custom container name, skip the `cname` block and pass your own value to `--name` (e.g., `--name webapp-claude`):
 
@@ -386,16 +380,16 @@ cname="${dir_base:-dir}-${dir_hash}-claude"
 docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
+    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
     claude-code-gpu
 
 # No GPU:
 docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude-creds/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude-creds/.claude.json",dst=/home/agent/.claude.json \
+    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
     claude-code-nogpu
 ```
 
@@ -433,24 +427,7 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials are stored on the host in `~/.claude-creds/`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
-
-## Useful Commands
-
-| Task | Command |
-|---|---|
-| Build image (GPU) | `docker build -t claude-code-gpu --build-arg NVIDIA_VISIBLE_DEVICES=all --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility -f dockerfiles/Dockerfile.claude dockerfiles/` |
-| Build image (no GPU) | `docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/` |
-| Build LaTeX image | `docker build -t claude-code-latex -f dockerfiles/Dockerfile.claude-latex dockerfiles/` |
-| Create a container for a new project | See [Step 5.4](#step-54---create-a-container-for-a-new-project) |
-| Resume a stopped container | `docker start -ai <name>` |
-| Open extra shell in running container | `docker exec -it <name> /bin/bash` |
-| Stop a container | `docker stop <name>` |
-| Remove a container | `docker rm <name>` |
-| List GPU containers | `docker ps -a --filter "ancestor=claude-code-gpu"` |
-| List non-GPU containers | `docker ps -a --filter "ancestor=claude-code-nogpu"` |
-| Launch Claude Code (inside container) | `claude` |
-| Verify GPU access (inside container) | `nvidia-smi` |
+`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials are stored on the host in `~/.claude/` and `~/.claude.json`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
 ## Author
 
