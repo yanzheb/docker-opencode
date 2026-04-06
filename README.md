@@ -392,6 +392,8 @@ docker run -it \
     claude-code-nogpu
 ```
 
+If you use PyTorch's `DataLoader` with `num_workers > 0`, Docker's default 64 MB shared-memory allocation causes "No space left on device" errors at runtime. Add `--shm-size=8g` (adjust to your workload) to the `docker run` command.
+
 The hash in the derived name disambiguates directories that share a basename but live in different locations. The `--mount` flags share your Claude login and global `CLAUDE.md` between containers. Settings, plugins, and MCP server configurations remain container-local.
 
 Inside the container, launch Claude Code and authenticate:
