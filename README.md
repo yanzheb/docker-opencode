@@ -336,19 +336,7 @@ docker build -t claude-code-latex \
 
 Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
 
-Then create a container from the derived image by replacing the image name in the `docker run` command from [Step 5.4](#step-54---create-a-container-for-a-new-project). Make sure the credential files from Step 5.4 exist on the host before running the command. For example, to use the LaTeX image without GPU support:
-
-```bash
-cd ~/my-document
-docker run -it \
-    --name my-document-claude \
-    --mount type=bind,src="$(pwd -P)",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
-    claude-code-latex
-```
-
-Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
+In Step 5.4, replace the image name (e.g. `claude-code-nogpu`) with your derived image (e.g. `claude-code-latex`). Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
 
 </details>
 
