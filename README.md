@@ -300,10 +300,11 @@ docker --version
 
 ### Step 5.2 - Review the Dockerfiles
 
-Both Dockerfiles are short and commented. Review them before building:
+The Dockerfiles are short and commented. Review them before building:
 
 - [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude) (base image)
 - [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex) (derived image adding `texlive-full` and `latexmk`)
+- [`dockerfiles/Dockerfile.claude-pixi`](dockerfiles/Dockerfile.claude-pixi) (derived image adding the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
@@ -335,6 +336,13 @@ docker build -t claude-code-latex \
 ```
 
 Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
+
+Another example, [`dockerfiles/Dockerfile.claude-pixi`](dockerfiles/Dockerfile.claude-pixi), installs the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager:
+
+```bash
+docker build -t claude-code-pixi \
+    -f dockerfiles/Dockerfile.claude-pixi dockerfiles/
+```
 
 In Step 5.4, replace the image name (e.g. `claude-code-nogpu`) with your derived image (e.g. `claude-code-latex`). Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
 
