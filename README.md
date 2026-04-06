@@ -418,6 +418,14 @@ When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
 docker stop my-project-a1b2-claude
 ```
 
+To remove a container entirely:
+
+```bash
+docker rm my-project-a1b2-claude
+```
+
+Login credentials and your global `CLAUDE.md` are stored on the host and survive removal. Settings, plugins, MCP configurations, and installed packages inside the container are lost.
+
 To open an additional terminal in the same running container, use `docker exec` from another terminal:
 
 ```bash
@@ -426,7 +434,7 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials and your global `CLAUDE.md` are stored on the host in `~/.claude/` and `~/.claude.json`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
+`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead.
 
 To list your containers:
 
