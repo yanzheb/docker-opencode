@@ -350,11 +350,12 @@ In Step 5.4, replace the image name (e.g. `claude-code-nogpu`) with your derived
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. First, make sure the credential files that Claude Code writes to exist on the host so the bind mount works (one-time, safe to re-run):
+Each project gets its own named container. First, make sure the files that Claude Code reads from or writes to exist on the host so the bind mounts work (one-time, safe to re-run):
 
 ```bash
 mkdir -p ~/.claude
 touch ~/.claude/.credentials.json
+touch ~/.claude/CLAUDE.md
 [ -f ~/.claude.json ] || echo '{}' > ~/.claude.json
 ```
 
@@ -377,6 +378,7 @@ docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
     --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
     claude-code-gpu
 
@@ -385,11 +387,12 @@ docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
     --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
     claude-code-nogpu
 ```
 
-The hash in the derived name disambiguates directories that share a basename but live in different locations. The credential `--mount` flags share only your Claude login between containers. Settings, plugins, and MCP server configurations remain container-local.
+The hash in the derived name disambiguates directories that share a basename but live in different locations. The `--mount` flags share your Claude login and global `CLAUDE.md` between containers. Settings, plugins, and MCP server configurations remain container-local.
 
 Inside the container, launch Claude Code and authenticate:
 
@@ -423,7 +426,7 @@ docker exec -it my-project-a1b2-claude /bin/bash
 
 You can open as many `docker exec` sessions as you want.
 
-`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials are stored on the host in `~/.claude/` and `~/.claude.json`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
+`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead. Login credentials and your global `CLAUDE.md` are stored on the host in `~/.claude/` and `~/.claude.json`, so they survive even if you `docker rm` a container. Settings, plugins, MCP configurations, and installed packages inside the container are lost on removal.
 
 To list your containers:
 
