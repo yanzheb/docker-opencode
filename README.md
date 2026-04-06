@@ -92,8 +92,8 @@ Source: [docs.docker.com/engine/install/ubuntu - "Install using the apt reposito
 ### Step 2.1 - Install prerequisites
 
 ```bash
-sudo apt update
-sudo apt install -y ca-certificates curl
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
 ```
 
 These allow fetching packages over HTTPS and downloading GPG keys.
@@ -125,8 +125,8 @@ This creates a DEB822-format sources file pointing to Docker's official reposito
 ### Step 2.4 - Install Docker Engine packages
 
 ```bash
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
 ### Step 2.5 - Verify the installation
