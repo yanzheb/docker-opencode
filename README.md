@@ -353,11 +353,12 @@ In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `openco
 
 Each project gets its own container, named after its directory (e.g. `my-project-opencode`).
 
-First, make sure OpenCode's config file exists on the host (one-time, safe to re-run):
+First, make sure OpenCode's config files exist on the host (one-time, safe to re-run):
 
 ```bash
 mkdir -p ~/.config/opencode
 touch ~/.config/opencode/opencode.json
+touch ~/.config/opencode/tui.json
 ```
 
 Then create the container from your project directory:
@@ -371,6 +372,7 @@ docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
+    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
     opencode-nogpu
 ```
 
@@ -390,6 +392,7 @@ docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
+    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
     opencode-gpu
 ```
 
@@ -405,7 +408,7 @@ Inside the container, launch OpenCode:
 opencode
 ```
 
-OpenCode starts in `/workspace`. API keys and provider credentials are read from the mounted `opencode.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config details.
+OpenCode starts in `/workspace`. API keys and provider credentials are read from the mounted `opencode.json`. For TUI-specific settings, use `~/.config/opencode/tui.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config details.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
@@ -426,7 +429,7 @@ docker stop my-project-opencode   # stop a running container
 docker rm my-project-opencode     # remove it entirely
 ```
 
-Your OpenCode config in `~/.config/opencode/opencode.json` lives on the host and survives container removal. Packages installed inside the container are lost.
+Your OpenCode config files (`~/.config/opencode/opencode.json` and `~/.config/opencode/tui.json`) live on the host and survive container removal. Packages installed inside the container are lost.
 
 **Other useful commands:**
 
