@@ -274,7 +274,7 @@ Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CU
 
 ## Section 5 - Running Claude Code in a Docker Container
 
-This section covers both GPU and non-GPU setups. Use the GPU variant if you completed Section 4. Use the no-GPU variant for Ubuntu without a GPU or macOS.
+This section covers both GPU and non-GPU setups. For beginners or users without a GPU, follow the main steps — GPU variants are in collapsible sections you can skip.
 
 The setup below is adapted from community guides (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
 
@@ -298,9 +298,10 @@ Verify Docker is running:
 docker --version
 ```
 
-### Step 5.2 - Review the Dockerfiles
+### Step 5.2 - Review the Dockerfiles (optional)
 
-The Dockerfiles are short and commented. Review them before building:
+<details>
+<summary><strong>Click to expand.</strong> The Dockerfiles are short and commented — worth a look before building, but not required.</summary>
 
 - [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude) (base image)
 - [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex) (derived image adding `texlive-full` and `latexmk`)
@@ -308,25 +309,33 @@ The Dockerfiles are short and commented. Review them before building:
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
+</details>
+
 ### Step 5.3 - Build the image (one-time setup)
 
 From the repo root:
 
 ```bash
-# GPU:
-docker build -t claude-code-gpu \
-    --build-arg NVIDIA_VISIBLE_DEVICES=all \
-    --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    -f dockerfiles/Dockerfile.claude dockerfiles/
-
-# No GPU:
 docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/
 ```
 
 You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of reusing a cached layer.
 
 <details>
-<summary><strong>Project-specific extras.</strong> Click to expand. Covers tools too large to bake into the default image, like a full LaTeX toolchain, added via a thin derived Dockerfile.</summary>
+<summary><strong>GPU variant and project-specific extras. Click to expand.</strong></summary>
+
+**GPU build:**
+
+```bash
+docker build -t claude-code-gpu \
+    --build-arg NVIDIA_VISIBLE_DEVICES=all \
+    --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    -f dockerfiles/Dockerfile.claude dockerfiles/
+```
+
+In Step 5.4, use `claude-code-gpu` instead of `claude-code-nogpu`.
+
+**Project-specific extras**
 
 Add a thin Dockerfile that layers on top of the base image. The repo ships one example, [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex), which installs `texlive-full` and `latexmk` on top of `claude-code-nogpu`. Build it after the base image:
 
@@ -344,7 +353,7 @@ docker build -t claude-code-pixi \
     -f dockerfiles/Dockerfile.claude-pixi dockerfiles/
 ```
 
-In Step 5.4, replace the image name (e.g. `claude-code-nogpu`) with your derived image (e.g. `claude-code-latex`). Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
+In Step 5.4, replace `claude-code-nogpu` with your derived image name (e.g. `claude-code-latex`). Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
 
 </details>
 
@@ -361,28 +370,13 @@ touch ~/.claude/CLAUDE.md
 
 If you have already run `claude` on the host, these files exist and you can skip this step.
 
-Then create the container from the project directory. For a custom container name, skip the `cname` block and pass your own value to `--name` (e.g., `--name webapp-claude`):
+Then create the container from the project directory:
 
 ```bash
 cd ~/my-project
 workspace="$(pwd -P)"
+cname="$(basename "${workspace}")-claude"
 
-# Optional: derive the container name from the current directory.
-# Skip this block if you'd rather pass your own name to --name below.
-dir_base="$(basename "${workspace}" | sed -E 's/[^a-zA-Z0-9_.-]+/-/g; s/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$//g')"
-dir_hash="$(printf '%s' "${workspace}" | md5sum | cut -c1-4)"  # macOS: use md5 instead of md5sum
-cname="${dir_base:-dir}-${dir_hash}-claude"
-
-# GPU:
-docker run -it --gpus all \
-    --name "${cname}" \
-    --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
-    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
-    claude-code-gpu
-
-# No GPU:
 docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
@@ -392,9 +386,32 @@ docker run -it \
     claude-code-nogpu
 ```
 
+If two of your projects share a directory name, append a suffix to avoid a conflict (e.g., `cname="$(basename "${workspace}")-2-claude"`).
+
 If you use PyTorch's `DataLoader` with `num_workers > 0`, Docker's default 64 MB shared-memory allocation causes "No space left on device" errors at runtime. Add `--shm-size=8g` (adjust to your workload) to the `docker run` command.
 
-The hash in the derived name disambiguates directories that share a basename but live in different locations. The `--mount` flags share your Claude login and global `CLAUDE.md` between containers. Settings, plugins, and MCP server configurations remain container-local.
+<details>
+<summary><strong>GPU variant. Click to expand.</strong></summary>
+
+```bash
+cd ~/my-project
+workspace="$(pwd -P)"
+cname="$(basename "${workspace}")-claude"
+
+docker run -it --gpus all \
+    --name "${cname}" \
+    --mount type=bind,src="${workspace}",dst=/workspace \
+    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
+    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
+    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
+    claude-code-gpu
+```
+
+To verify GPU access, run `nvidia-smi` inside the container.
+
+</details>
+
+The `--mount` flags share your Claude login and global `CLAUDE.md` between containers. Settings, plugins, and MCP server configurations remain container-local.
 
 Inside the container, launch Claude Code and authenticate:
 
@@ -402,28 +419,28 @@ Inside the container, launch Claude Code and authenticate:
 claude
 ```
 
-Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code. To verify GPU access, run `nvidia-smi` inside the container.
+Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
 After the first run, always use `start` to resume the container. This preserves installed packages and configuration:
 
 ```bash
-docker start -ai my-project-a1b2-claude
+docker start -ai my-project-claude
 ```
 
-This is your day-to-day command. Substitute your container name, or use the filter commands below to find it. You can run it from any directory, since the project directory from Step 5.4 is permanently bound to `/workspace`.
+This is your day-to-day command. Substitute your container name. You can run it from any directory, since the project directory from Step 5.4 is permanently bound to `/workspace`.
 
 When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
 
 ```bash
-docker stop my-project-a1b2-claude
+docker stop my-project-claude
 ```
 
 To remove a container entirely:
 
 ```bash
-docker rm my-project-a1b2-claude
+docker rm my-project-claude
 ```
 
 Login credentials and your global `CLAUDE.md` are stored on the host and survive removal. Settings, plugins, MCP configurations, and installed packages inside the container are lost.
@@ -431,7 +448,7 @@ Login credentials and your global `CLAUDE.md` are stored on the host and survive
 To open an additional terminal in the same running container, use `docker exec` from another terminal:
 
 ```bash
-docker exec -it my-project-a1b2-claude /bin/bash
+docker exec -it my-project-claude /bin/bash
 ```
 
 You can open as many `docker exec` sessions as you want.
