@@ -268,9 +268,7 @@ Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CU
 
 ## Section 5 - Running OpenCode in a Docker Container
 
-This section covers both GPU and non-GPU setups. For beginners or users without a GPU, follow the main steps — GPU variants are in collapsible sections you can skip.
-
-The setup below follows the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) and the [OpenCode documentation](https://opencode.ai/docs).
+GPU variants are in collapsible sections you can skip. The setup follows the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) and [OpenCode documentation](https://opencode.ai/docs).
 
 ### Step 5.1 - Install Docker (macOS only)
 
@@ -282,7 +280,7 @@ macOS: install Docker Desktop via [Homebrew](https://brew.sh/):
 brew install --cask docker-desktop
 ```
 
-Then open Docker Desktop from your Applications folder or via Spotlight (`Cmd + Space`, type "Docker"). Follow the on-screen prompts to grant permissions. Wait for the whale icon to appear in your menu bar.
+Open Docker Desktop from your Applications folder or Spotlight (`Cmd + Space`, type "Docker") and follow the prompts. Wait for the whale icon in your menu bar.
 
 Source: [docs.docker.com/desktop/setup/install/mac-install](https://docs.docker.com/desktop/setup/install/mac-install/)
 
@@ -295,7 +293,7 @@ docker --version
 ### Step 5.2 - Review the Dockerfiles (optional)
 
 <details>
-<summary><strong>Click to expand.</strong> The Dockerfiles are short and commented — worth a look before building, but not required.</summary>
+<summary><strong>Click to expand.</strong> The Dockerfiles are short and commented; worth a look before building, but not required.</summary>
 
 - [`dockerfiles/Dockerfile.opencode`](dockerfiles/Dockerfile.opencode) (base image)
 - [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex) (derived image adding `texlive-full` and `latexmk`)
@@ -313,7 +311,7 @@ From the repo root:
 docker build -t opencode-nogpu -f dockerfiles/Dockerfile.opencode dockerfiles/
 ```
 
-You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of reusing a cached layer.
+Rebuild only if you change the Dockerfile or want updated base images. Add `--pull` to fetch the latest base image and pick up security patches.
 
 <details>
 <summary><strong>GPU variant and project-specific extras. Click to expand.</strong></summary>
@@ -353,16 +351,16 @@ In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `openco
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. First, make sure the config file that OpenCode reads exists on the host so the bind mount works (one-time, safe to re-run):
+Each project gets its own container, named after its directory (e.g. `my-project-opencode`).
+
+First, make sure OpenCode's config file exists on the host (one-time, safe to re-run):
 
 ```bash
 mkdir -p ~/.config/opencode
 touch ~/.config/opencode/opencode.json
 ```
 
-If you have already run `opencode` on the host, this file exists and you can skip this step.
-
-Then create the container from the project directory:
+Then create the container from your project directory:
 
 ```bash
 cd ~/my-project
@@ -376,9 +374,9 @@ docker run -it \
     opencode-nogpu
 ```
 
-If two of your projects share a directory name, append a suffix to avoid a conflict (e.g., `cname="$(basename "${workspace}")-2-opencode"`).
+> **Note:** If two projects share a directory name, set `cname` manually to avoid a conflict (e.g. `cname="my-project-2-opencode"`).
 
-If you use PyTorch's `DataLoader` with `num_workers > 0`, Docker's default 64 MB shared-memory allocation causes "No space left on device" errors at runtime. Add `--shm-size=8g` (adjust to your workload) to the `docker run` command.
+> **Note:** If you use PyTorch's `DataLoader` with `num_workers > 0`, add `--shm-size=8g` to the `docker run` command. Docker's default 64 MB shared-memory limit causes "No space left on device" errors at runtime.
 
 <details>
 <summary><strong>GPU variant. Click to expand.</strong></summary>
@@ -399,7 +397,7 @@ To verify GPU access, run `nvidia-smi` inside the container.
 
 </details>
 
-The `--mount` flag shares your OpenCode config and credentials between containers. MCP server configurations stored outside `opencode.json` remain container-local.
+The `--mount` flags share your project directory and OpenCode config with the container. MCP server configurations stored outside `opencode.json` remain container-local.
 
 Inside the container, launch OpenCode:
 
@@ -407,51 +405,39 @@ Inside the container, launch OpenCode:
 opencode
 ```
 
-OpenCode starts in `/workspace` (your mounted project directory). API keys and provider credentials are read from the mounted `opencode.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config file format details.
+OpenCode starts in `/workspace`. API keys and provider credentials are read from the mounted `opencode.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config details.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
-After the first run, always use `start` to resume the container. This preserves installed packages and configuration:
+After the first run, always use `start` to resume — this preserves installed packages and configuration:
 
 ```bash
 docker start -ai my-project-opencode
 ```
 
-This is your day-to-day command. Substitute your container name. You can run it from any directory, since the project directory from Step 5.4 is permanently bound to `/workspace`.
+Substitute your container name. You can run this from any directory.
 
-When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
+When you're done, exit with `exit` or `Ctrl+D`. The container stops automatically.
 
-```bash
-docker stop my-project-opencode
-```
-
-To remove a container entirely:
+**Stopping and removing:**
 
 ```bash
-docker rm my-project-opencode
+docker stop my-project-opencode   # stop a running container
+docker rm my-project-opencode     # remove it entirely
 ```
 
-Your OpenCode config and credentials are stored on the host in `~/.config/opencode/opencode.json` and survive container removal. Installed packages inside the container are lost.
+Your OpenCode config in `~/.config/opencode/opencode.json` lives on the host and survives container removal. Packages installed inside the container are lost.
 
-To open an additional terminal in the same running container, use `docker exec` from another terminal:
+**Other useful commands:**
 
 ```bash
-docker exec -it my-project-opencode /bin/bash
+docker ps      # list running containers
+docker ps -a   # include stopped containers
+
+docker exec -it my-project-opencode /bin/bash   # open a second terminal in a running container
 ```
 
-You can open as many `docker exec` sessions as you want.
-
-`docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead.
-
-To list your containers:
-
-```bash
-# List running containers:
-docker ps
-
-# Include stopped containers:
-docker ps -a
-```
+> **Note:** `docker start -ai` only works on a stopped container. If it's already running, use `docker exec` instead.
 
 ## Author
 
