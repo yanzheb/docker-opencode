@@ -1,10 +1,10 @@
-# Adds the Pixi package manager on top of the base Claude Code image.
+# Adds the Pixi package manager on top of the base OpenCode image.
 # Build the base first (see README Step 5.3), then:
-#   docker build -t claude-code-pixi \
-#       -f dockerfiles/Dockerfile.claude-pixi dockerfiles/
+#   docker build -t opencode-pixi \
+#       -f dockerfiles/Dockerfile.opencode-pixi dockerfiles/
 #
-# Pass --build-arg BASE_IMAGE=claude-code-gpu to layer on the GPU base instead.
-ARG BASE_IMAGE=claude-code-nogpu
+# Pass --build-arg BASE_IMAGE=opencode-gpu to layer on the GPU base instead.
+ARG BASE_IMAGE=opencode-nogpu
 FROM ${BASE_IMAGE}
 
 # Install Pixi via the official install script. PIXI_NO_PATH_UPDATE skips

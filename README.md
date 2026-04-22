@@ -1,36 +1,30 @@
-# Run Claude Code in Docker with GPU Support
+# Run OpenCode in Docker with GPU Support
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
-![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-claude-code-setup)
-[![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aclaude--code-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
+![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-opencode-setup)
+[![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aopencode-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
 
-Dockerfiles and a guide for running [Claude Code](https://code.claude.com/) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
+Dockerfiles and a guide for running [OpenCode](https://opencode.ai) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
 
 > These instructions have been tested but are provided as-is. Review each command before running it and back up any important data.
 
 ## Why This Repo?
 
-Coding agents are useful, but I won't give them full access to my machine. I wanted to use Claude Code without giving up privacy or control, so I looked for a way to run it inside Docker.
+Coding agents are useful, but I won't give them full access to my machine. I wanted to use OpenCode without giving up privacy or control, so I looked for a way to run it inside Docker.
 
-I first tried [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/agents/claude-code/), but they use microVMs that don't support GPU passthrough, and I need the GPU. They're also still experimental.
+I first tried [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/), but they use microVMs that don't support GPU passthrough, and I need the GPU. They're also still experimental.
 
-I also looked at a few community projects:
+So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:opencode`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to extend. I can bake in whatever tools a project needs so OpenCode can run them itself to verify its work. For a project that builds LaTeX documents, that means a full LaTeX toolchain, letting the agent compile, read the errors, and fix them on its own. Docker keeps the base image updated, so I don't have to.
 
-- [cco](https://github.com/nikvdp/cco) works well, but it prefers native OS sandboxing and only falls back to Docker. I wanted to own the Dockerfile so I could set up GPU passthrough and tweak the image myself.
-- [jai](https://github.com/stanford-scs/jai) takes a lightweight approach using Linux kernel APIs, but it's Linux-only. I also need macOS support.
-- [claudebox](https://github.com/RchGrav/claudebox) bundles language profiles, firewall rules, and tmux into one setup, which is more than I needed.
-
-So I built this. It's a thin wrapper around Docker's official [`docker/sandbox-templates:claude-code`](https://hub.docker.com/r/docker/sandbox-templates) image. It's small, easy to read, and easy to extend. I can bake in whatever tools a project needs so Claude Code can run them itself to verify its work. For a project that builds LaTeX documents, that means a full LaTeX toolchain, letting the agent compile, read the errors, and fix them on its own. Docker keeps the base image updated, so I don't have to.
-
-Switching to a different coding agent is easy. Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like OpenCode, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
+Switching to a different coding agent is easy. Docker ships [the same kind of image for other agents](https://hub.docker.com/r/docker/sandbox-templates/tags) like Claude Code, Codex, and Gemini CLI. To try one, copy a Dockerfile in `dockerfiles/`, change the `FROM` line, and rebuild. The rest stays the same.
 
 ## Quick Start
 
 | Your setup | Start here |
 |---|---|
-| Ubuntu + NVIDIA GPU | [Sections 2-4](#section-2---install-docker-engine), then [Section 5](#section-5---running-claude-code-in-a-docker-container) (Section 1 optional) |
-| Ubuntu, no GPU | [Sections 2-3](#section-2---install-docker-engine), then [Section 5](#section-5---running-claude-code-in-a-docker-container) (Section 1 optional) |
-| macOS | [Section 5](#section-5---running-claude-code-in-a-docker-container) directly |
+| Ubuntu + NVIDIA GPU | [Sections 2-4](#section-2---install-docker-engine), then [Section 5](#section-5---running-opencode-in-a-docker-container) (Section 1 optional) |
+| Ubuntu, no GPU | [Sections 2-3](#section-2---install-docker-engine), then [Section 5](#section-5---running-opencode-in-a-docker-container) (Section 1 optional) |
+| macOS | [Section 5](#section-5---running-opencode-in-a-docker-container) directly |
 
 ## Table of Contents
 
@@ -38,7 +32,7 @@ Switching to a different coding agent is easy. Docker ships [the same kind of im
 2. [Install Docker Engine](#section-2---install-docker-engine)
 3. [Docker Post-Installation Setup](#section-3---docker-post-installation-setup)
 4. [Install and Configure the NVIDIA Container Toolkit](#section-4---install-and-configure-the-nvidia-container-toolkit)
-5. [Running Claude Code in a Docker Container](#section-5---running-claude-code-in-a-docker-container)
+5. [Running OpenCode in a Docker Container](#section-5---running-opencode-in-a-docker-container)
 
 Prerequisites (Sections 1-4, and Section 5 GPU variant):
 
@@ -272,11 +266,11 @@ Replace `13.2.0-base-ubuntu24.04` with a tag matching your driver's supported CU
 
 </details>
 
-## Section 5 - Running Claude Code in a Docker Container
+## Section 5 - Running OpenCode in a Docker Container
 
 This section covers both GPU and non-GPU setups. For beginners or users without a GPU, follow the main steps — GPU variants are in collapsible sections you can skip.
 
-The setup below is adapted from community guides (notably [Xueshen Liu's guide](https://xenshinu.github.io/claude_tmux/) and [Martin Thorsen Ranang's truecolor fix](https://ranang.medium.com/fixing-claude-codes-flat-or-washed-out-remote-colors-82f8143351ed)) and the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/).
+The setup below follows the official [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) and the [OpenCode documentation](https://opencode.ai/docs).
 
 ### Step 5.1 - Install Docker (macOS only)
 
@@ -303,9 +297,9 @@ docker --version
 <details>
 <summary><strong>Click to expand.</strong> The Dockerfiles are short and commented — worth a look before building, but not required.</summary>
 
-- [`dockerfiles/Dockerfile.claude`](dockerfiles/Dockerfile.claude) (base image)
-- [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex) (derived image adding `texlive-full` and `latexmk`)
-- [`dockerfiles/Dockerfile.claude-pixi`](dockerfiles/Dockerfile.claude-pixi) (derived image adding the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager)
+- [`dockerfiles/Dockerfile.opencode`](dockerfiles/Dockerfile.opencode) (base image)
+- [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex) (derived image adding `texlive-full` and `latexmk`)
+- [`dockerfiles/Dockerfile.opencode-pixi`](dockerfiles/Dockerfile.opencode-pixi) (derived image adding the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
@@ -316,7 +310,7 @@ The official sandbox template runs as a non-root user called `agent` with sudo a
 From the repo root:
 
 ```bash
-docker build -t claude-code-nogpu -f dockerfiles/Dockerfile.claude dockerfiles/
+docker build -t opencode-nogpu -f dockerfiles/Dockerfile.opencode dockerfiles/
 ```
 
 You only need to rebuild if you change the Dockerfile or want to pull updated base images. Add `--pull` to fetch the latest base image and pick up security patches instead of reusing a cached layer.
@@ -327,66 +321,62 @@ You only need to rebuild if you change the Dockerfile or want to pull updated ba
 **GPU build:**
 
 ```bash
-docker build -t claude-code-gpu \
+docker build -t opencode-gpu \
     --build-arg NVIDIA_VISIBLE_DEVICES=all \
     --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    -f dockerfiles/Dockerfile.claude dockerfiles/
+    -f dockerfiles/Dockerfile.opencode dockerfiles/
 ```
 
-In Step 5.4, use `claude-code-gpu` instead of `claude-code-nogpu`.
+In Step 5.4, use `opencode-gpu` instead of `opencode-nogpu`.
 
 **Project-specific extras**
 
-Add a thin Dockerfile that layers on top of the base image. The repo ships one example, [`dockerfiles/Dockerfile.claude-latex`](dockerfiles/Dockerfile.claude-latex), which installs `texlive-full` and `latexmk` on top of `claude-code-nogpu`. Build it after the base image:
+Add a thin Dockerfile that layers on top of the base image. The repo ships one example, [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex), which installs `texlive-full` and `latexmk` on top of `opencode-nogpu`. Build it after the base image:
 
 ```bash
-docker build -t claude-code-latex \
-    -f dockerfiles/Dockerfile.claude-latex dockerfiles/
+docker build -t opencode-latex \
+    -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
 ```
 
-Pass `--build-arg BASE_IMAGE=claude-code-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
+Pass `--build-arg BASE_IMAGE=opencode-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
 
-Another example, [`dockerfiles/Dockerfile.claude-pixi`](dockerfiles/Dockerfile.claude-pixi), installs the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager:
+Another example, [`dockerfiles/Dockerfile.opencode-pixi`](dockerfiles/Dockerfile.opencode-pixi), installs the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager:
 
 ```bash
-docker build -t claude-code-pixi \
-    -f dockerfiles/Dockerfile.claude-pixi dockerfiles/
+docker build -t opencode-pixi \
+    -f dockerfiles/Dockerfile.opencode-pixi dockerfiles/
 ```
 
-In Step 5.4, replace `claude-code-nogpu` with your derived image name (e.g. `claude-code-latex`). Additional derived images (`Dockerfile.claude-rust`, etc.) follow the same pattern.
+In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
 
 </details>
 
 ### Step 5.4 - Create a container for a new project
 
-Each project gets its own named container. First, make sure the files that Claude Code reads from or writes to exist on the host so the bind mounts work (one-time, safe to re-run):
+Each project gets its own named container. First, make sure the config file that OpenCode reads exists on the host so the bind mount works (one-time, safe to re-run):
 
 ```bash
-mkdir -p ~/.claude
-touch ~/.claude/.credentials.json
-touch ~/.claude/CLAUDE.md
-[ -f ~/.claude.json ] || echo '{}' > ~/.claude.json
+mkdir -p ~/.config/opencode
+touch ~/.config/opencode/opencode.json
 ```
 
-If you have already run `claude` on the host, these files exist and you can skip this step.
+If you have already run `opencode` on the host, this file exists and you can skip this step.
 
 Then create the container from the project directory:
 
 ```bash
 cd ~/my-project
 workspace="$(pwd -P)"
-cname="$(basename "${workspace}")-claude"
+cname="$(basename "${workspace}")-opencode"
 
 docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
-    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
-    claude-code-nogpu
+    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
+    opencode-nogpu
 ```
 
-If two of your projects share a directory name, append a suffix to avoid a conflict (e.g., `cname="$(basename "${workspace}")-2-claude"`).
+If two of your projects share a directory name, append a suffix to avoid a conflict (e.g., `cname="$(basename "${workspace}")-2-opencode"`).
 
 If you use PyTorch's `DataLoader` with `num_workers > 0`, Docker's default 64 MB shared-memory allocation causes "No space left on device" errors at runtime. Add `--shm-size=8g` (adjust to your workload) to the `docker run` command.
 
@@ -396,37 +386,35 @@ If you use PyTorch's `DataLoader` with `num_workers > 0`, Docker's default 64 MB
 ```bash
 cd ~/my-project
 workspace="$(pwd -P)"
-cname="$(basename "${workspace}")-claude"
+cname="$(basename "${workspace}")-opencode"
 
 docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.claude/.credentials.json",dst=/home/agent/.claude/.credentials.json \
-    --mount type=bind,src="$HOME/.claude/CLAUDE.md",dst=/home/agent/.claude/CLAUDE.md \
-    --mount type=bind,src="$HOME/.claude.json",dst=/home/agent/.claude.json \
-    claude-code-gpu
+    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
+    opencode-gpu
 ```
 
 To verify GPU access, run `nvidia-smi` inside the container.
 
 </details>
 
-The `--mount` flags share your Claude login and global `CLAUDE.md` between containers. Settings, plugins, and MCP server configurations remain container-local.
+The `--mount` flag shares your OpenCode config and credentials between containers. MCP server configurations stored outside `opencode.json` remain container-local.
 
-Inside the container, launch Claude Code and authenticate:
+Inside the container, launch OpenCode:
 
 ```bash
-claude
+opencode
 ```
 
-Claude Code starts in `/workspace` (your mounted project directory) and prompts you to log in on first launch. Sign in with your Pro, Max, Team, or Enterprise account. To switch accounts later, run `/login` from within Claude Code.
+OpenCode starts in `/workspace` (your mounted project directory). API keys and provider credentials are read from the mounted `opencode.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config file format details.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
 After the first run, always use `start` to resume the container. This preserves installed packages and configuration:
 
 ```bash
-docker start -ai my-project-claude
+docker start -ai my-project-opencode
 ```
 
 This is your day-to-day command. Substitute your container name. You can run it from any directory, since the project directory from Step 5.4 is permanently bound to `/workspace`.
@@ -434,21 +422,21 @@ This is your day-to-day command. Substitute your container name. You can run it 
 When you're done, exit the shell with `exit` or `Ctrl+D`, or run:
 
 ```bash
-docker stop my-project-claude
+docker stop my-project-opencode
 ```
 
 To remove a container entirely:
 
 ```bash
-docker rm my-project-claude
+docker rm my-project-opencode
 ```
 
-Login credentials and your global `CLAUDE.md` are stored on the host and survive removal. Settings, plugins, MCP configurations, and installed packages inside the container are lost.
+Your OpenCode config and credentials are stored on the host in `~/.config/opencode/opencode.json` and survive container removal. Installed packages inside the container are lost.
 
 To open an additional terminal in the same running container, use `docker exec` from another terminal:
 
 ```bash
-docker exec -it my-project-claude /bin/bash
+docker exec -it my-project-opencode /bin/bash
 ```
 
 You can open as many `docker exec` sessions as you want.

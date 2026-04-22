@@ -1,10 +1,10 @@
-# Adds a full LaTeX toolchain on top of the base Claude Code image.
+# Adds a full LaTeX toolchain on top of the base OpenCode image.
 # Build the base first (see README Step 5.3), then:
-#   docker build -t claude-code-latex \
-#       -f dockerfiles/Dockerfile.claude-latex dockerfiles/
+#   docker build -t opencode-latex \
+#       -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
 #
-# Pass --build-arg BASE_IMAGE=claude-code-gpu to layer on the GPU base instead.
-ARG BASE_IMAGE=claude-code-nogpu
+# Pass --build-arg BASE_IMAGE=opencode-gpu to layer on the GPU base instead.
+ARG BASE_IMAGE=opencode-nogpu
 FROM ${BASE_IMAGE}
 
 # texlive-full is large (several GB) but pulls in every standard package, so

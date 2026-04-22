@@ -1,6 +1,6 @@
-# Start from the official Docker sandbox template for Claude Code.
-# This already includes Claude Code, Node.js, Python, Git, Go, and dev tools.
-FROM docker/sandbox-templates:claude-code
+# Start from the official Docker sandbox template for OpenCode.
+# This already includes OpenCode, Node.js, Python, Git, Go, and dev tools.
+FROM docker/sandbox-templates:opencode
 
 # NVIDIA environment variables for GPU access. Empty by default so the
 # image works on hosts without a GPU. For a GPU-enabled build, pass:
@@ -14,7 +14,7 @@ ARG NVIDIA_DRIVER_CAPABILITIES=""
 ENV NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
 ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 
-# Enable full 24-bit truecolor so Claude Code renders its theme correctly.
+# Enable full 24-bit truecolor so OpenCode renders its theme correctly.
 # Without these, colors appear washed out inside containers.
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
