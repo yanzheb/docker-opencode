@@ -409,7 +409,7 @@ Inside the container, launch OpenCode:
 opencode
 ```
 
-OpenCode starts in `/workspace`. API keys and provider credentials are read from the mounted `opencode.json`. For TUI-specific settings, use `~/.config/opencode/tui.json`. See the [OpenCode documentation](https://opencode.ai/docs) for config details.
+OpenCode starts in `/workspace`, reading API keys and provider credentials from the mounted `opencode.json` and terminal UI settings from `~/.config/opencode/tui.json`. See the [OpenCode documentation](https://opencode.ai/docs) for full config details.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
