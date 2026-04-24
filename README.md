@@ -364,9 +364,11 @@ touch ~/.config/opencode/tui.json
 Then create the container from your project directory:
 
 ```bash
-cd ~/my-project
+# Navigate to your project directory first, e.g.:
+# cd ~/my-project
+
 workspace="$(pwd -P)"
-cname="$(basename "${workspace}")-opencode"
+cname="my-project-opencode"   # Edit to your preferred container name
 
 docker run -it \
     --name "${cname}" \
@@ -384,9 +386,11 @@ docker run -it \
 <summary><strong>GPU variant. Click to expand.</strong></summary>
 
 ```bash
-cd ~/my-project
+# Navigate to your project directory first, e.g.:
+# cd ~/my-project
+
 workspace="$(pwd -P)"
-cname="$(basename "${workspace}")-opencode"
+cname="my-project-opencode"   # Edit to your preferred container name
 
 docker run -it --gpus all \
     --name "${cname}" \
