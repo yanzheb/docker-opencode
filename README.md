@@ -370,9 +370,14 @@ docker run -it \
     opencode-nogpu
 ```
 
+<details>
+<summary><strong>Notes</strong></summary>
+
 > **Note:** If two projects share a directory name, set `cname` manually to avoid a conflict (e.g. `cname="my-project-2-opencode"`).
 
 > **Note:** If you use PyTorch's `DataLoader` with `num_workers > 0`, add `--shm-size=8g` to the `docker run` command. Docker's default 64 MB shared-memory limit causes "No space left on device" errors at runtime.
+
+</details>
 
 <details>
 <summary><strong>GPU variant. Click to expand.</strong></summary>
