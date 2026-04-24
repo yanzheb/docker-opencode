@@ -314,9 +314,9 @@ docker build -t opencode-nogpu -f dockerfiles/Dockerfile.opencode dockerfiles/
 Rebuild only if you change the Dockerfile or want updated base images. Add `--pull` to fetch the latest base image and pick up security patches.
 
 <details>
-<summary><strong>GPU variant and project-specific extras. Click to expand.</strong></summary>
+<summary><strong>GPU variant and project-specific extras</strong></summary>
 
-**GPU build:**
+**GPU build**
 
 ```bash
 docker build -t opencode-gpu \
@@ -329,14 +329,14 @@ In Step 5.4, use `opencode-gpu` instead of `opencode-nogpu`.
 
 **Project-specific extras**
 
-Add a thin Dockerfile that layers on top of the base image. The repo ships one example, [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex), which installs `texlive-full` and `latexmk` on top of `opencode-nogpu`. Build it after the base image:
+Add a derived Dockerfile that layers tools on top of the base image. The repository includes one example, [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex), which installs `texlive-full` and `latexmk` on top of `opencode-nogpu`. Build it after the base image:
 
 ```bash
 docker build -t opencode-latex \
     -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
 ```
 
-Pass `--build-arg BASE_IMAGE=opencode-gpu` to layer on the GPU base instead. `texlive-full` is several GB, so the first build is slow.
+To layer on the GPU base instead, pass `--build-arg BASE_IMAGE=opencode-gpu`. `texlive-full` is several gigabytes, so the first build will take a while.
 
 Another example, [`dockerfiles/Dockerfile.opencode-pixi`](dockerfiles/Dockerfile.opencode-pixi), installs the [Pixi](https://pixi.prefix.dev/latest/installation/) package manager:
 
