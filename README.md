@@ -401,7 +401,7 @@ To verify GPU access, run `nvidia-smi` inside the container.
 
 </details>
 
-The `--mount` flags share your project directory and OpenCode config with the container. MCP server configurations stored outside `opencode.json` remain container-local.
+The `--mount` flags share your project directory and OpenCode config with the container.
 
 Inside the container, launch OpenCode:
 
