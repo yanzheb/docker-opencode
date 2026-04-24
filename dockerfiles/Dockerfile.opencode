@@ -19,5 +19,15 @@ ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
+# Install Pixi via the official install script. PIXI_NO_PATH_UPDATE skips
+# shell-config modifications that are unnecessary in a container. The script
+# places the binary under /root/.pixi/bin, so we move it to /usr/local/bin
+# for system-wide access regardless of user.
+USER root
+RUN curl -fsSL https://pixi.sh/install.sh | PIXI_NO_PATH_UPDATE=1 bash \
+    && mv /root/.pixi/bin/pixi /usr/local/bin/pixi \
+    && rm -rf /root/.pixi
+USER agent
+
 WORKDIR /workspace
 CMD ["/bin/bash"]
