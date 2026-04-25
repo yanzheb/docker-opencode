@@ -16,6 +16,11 @@ USER root
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_NO_PATH_UPDATE=1 bash \
     && mv /root/.pixi/bin/pixi /usr/local/bin/pixi \
     && rm -rf /root/.pixi
+
+# Install Ollama (zstd is required for extraction).
+RUN apt-get update && apt-get install -y --no-install-recommends zstd \
+    && curl -fsSL https://ollama.com/install.sh | sh \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 USER agent
 
 WORKDIR /workspace
