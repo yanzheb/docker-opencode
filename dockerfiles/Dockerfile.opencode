@@ -1,28 +1,17 @@
-# Start from the official Docker sandbox template for OpenCode.
-# This already includes OpenCode, Node.js, Python, Git, Go, and dev tools.
 FROM docker/sandbox-templates:opencode
 
-# NVIDIA environment variables for GPU access. Empty by default so the
-# image works on hosts without a GPU. For a GPU-enabled build, pass:
-#   --build-arg NVIDIA_VISIBLE_DEVICES=all
-#   --build-arg NVIDIA_DRIVER_CAPABILITIES=compute,utility
-# The NVIDIA Container Toolkit on the host reads these at container
-# startup and injects the driver libraries. No CUDA install is needed
-# inside the image for basic GPU access.
+# GPU build args. Empty by default; pass --build-arg for GPU support.
+# The NVIDIA Container Toolkit injects drivers at runtime—no CUDA inside needed.
 ARG NVIDIA_VISIBLE_DEVICES=""
 ARG NVIDIA_DRIVER_CAPABILITIES=""
 ENV NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
 ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 
-# Enable full 24-bit truecolor so OpenCode renders its theme correctly.
-# Without these, colors appear washed out inside containers.
+# Enable truecolor so OpenCode renders its theme correctly.
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
-# Install Pixi via the official install script. PIXI_NO_PATH_UPDATE skips
-# shell-config modifications that are unnecessary in a container. The script
-# places the binary under /root/.pixi/bin, so we move it to /usr/local/bin
-# for system-wide access regardless of user.
+# Install Pixi globally. PIXI_NO_PATH_UPDATE skips unnecessary shell config.
 USER root
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_NO_PATH_UPDATE=1 bash \
     && mv /root/.pixi/bin/pixi /usr/local/bin/pixi \

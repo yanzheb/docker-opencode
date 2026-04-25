@@ -1,15 +1,9 @@
-# Adds a full LaTeX toolchain on top of the base OpenCode image.
-# Build the base first (see README Step 5.3), then:
-#   docker build -t opencode-latex \
-#       -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
-#
-# Pass --build-arg BASE_IMAGE=opencode-gpu to layer on the GPU base instead.
+# LaTeX toolchain layered on the base image.
+# Build the base first, then pass --build-arg BASE_IMAGE=opencode-gpu if needed.
 ARG BASE_IMAGE=opencode-nogpu
 FROM ${BASE_IMAGE}
 
-# texlive-full is large (several GB) but pulls in every standard package, so
-# projects do not need to guess which texlive-* subset they need. latexmk is
-# the usual top-level build driver.
+# texlive-full is large (~several GB) but includes all standard packages.
 USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
