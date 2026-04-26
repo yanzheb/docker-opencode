@@ -1,7 +1,7 @@
 # Run OpenCode in Docker with GPU Support
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
-![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-opencode-setup)
+![Last commit](https://img.shields.io/github/last-commit/yanzheb/docker-opencode)
 [![Base image](https://img.shields.io/badge/base-docker%2Fsandbox--templates%3Aopencode-2496ED?logo=docker)](https://hub.docker.com/r/docker/sandbox-templates)
 
 Dockerfiles and a guide for running [OpenCode](https://opencode.ai) in Docker containers, with or without NVIDIA GPU support, on Ubuntu or macOS.
