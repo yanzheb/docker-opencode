@@ -1,4 +1,4 @@
-# Ollama layered on the base image.
+# Ollama and Hermes Agent layered on the base image.
 # Build the base first, then pass --build-arg BASE_IMAGE=opencode-gpu if needed.
 ARG BASE_IMAGE=opencode-nogpu
 FROM ${BASE_IMAGE}
@@ -9,6 +9,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends zstd \
     && curl -fsSL https://ollama.com/install.sh | sh \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 USER agent
+
+# Install Hermes Agent system dependencies.
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git build-essential python3-dev libffi-dev ripgrep ffmpeg \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+USER agent
+
+# Ensure tools installed to ~/.local/bin are available.
+ENV PATH="/home/agent/.local/bin:${PATH}"
+
+# Install Hermes Agent (non-interactive; skip setup wizard).
+RUN curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash -s -- --skip-setup
 
 WORKDIR /workspace
 CMD ["/bin/bash", "-c", "ollama serve > /dev/null 2>&1 & exec /bin/bash"]

@@ -325,7 +325,7 @@ Add a derived Dockerfile that layers tools on top of the base image. The reposit
       -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
   ```
 
-- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama), which installs Ollama and starts it in the background:
+- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama), which installs Ollama, Hermes Agent, and starts Ollama in the background:
 
   ```bash
   docker build -t opencode-ollama \
@@ -395,12 +395,12 @@ To verify GPU access, run `nvidia-smi` inside the container.
 </details>
 
 <details>
-<summary><strong>Ollama variant. Click to expand.</strong></summary>
+<summary><strong>Ollama / Hermes Agent variant. Click to expand.</strong></summary>
 
-Create the `.ollama` directory on the host first (one-time):
+Create the `.ollama` and `.hermes` directories on the host first (one-time):
 
 ```bash
-mkdir -p ~/.ollama
+mkdir -p ~/.ollama ~/.hermes
 ```
 
 ```bash
@@ -415,8 +415,11 @@ docker run -it --gpus all \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
     --mount type=bind,src="$HOME/.ollama",dst=/home/agent/.ollama \
+    --mount type=bind,src="$HOME/.hermes",dst=/home/agent/.hermes \
     opencode-ollama
 ```
+
+> **Note:** Hermes Agent stores its config, sessions, and logs in `~/.hermes`. Hermes also manages Node.js under `~/.hermes/node` and its code under `~/.hermes/hermes-agent`. Mounting `~/.hermes` lets you persist Hermes data across container restarts and configure it once.
 
 </details>
 
