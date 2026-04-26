@@ -355,12 +355,10 @@ In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `openco
 
 Each project gets its own container, named after its directory (e.g. `my-project-opencode`).
 
-First, make sure OpenCode's config files exist on the host (one-time, safe to re-run):
+First, make sure OpenCode's config folder exists on the host (one-time, safe to re-run):
 
 ```bash
 mkdir -p ~/.config/opencode
-touch ~/.config/opencode/opencode.json
-touch ~/.config/opencode/tui.json
 ```
 
 Then create the container from your project directory:
@@ -375,8 +373,7 @@ cname="my-project-opencode"   # Edit to your preferred container name
 docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
-    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
+    --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
     opencode-nogpu
 ```
 
@@ -402,8 +399,7 @@ cname="my-project-opencode"   # Edit to your preferred container name
 docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
-    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
+    --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
     opencode-gpu
 ```
 
@@ -430,15 +426,14 @@ cname="my-project-opencode"   # Edit to your preferred container name
 docker run -it \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
-    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
+    --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
     --mount type=bind,src="$HOME/.ollama",dst=/home/agent/.ollama \
     opencode-ollama
 ```
 
 </details>
 
-The `--mount` flags share your project directory and OpenCode config with the container.
+The `--mount` flags share your project directory and OpenCode config folder with the container.
 
 Inside the container, launch OpenCode:
 
@@ -446,7 +441,7 @@ Inside the container, launch OpenCode:
 opencode
 ```
 
-OpenCode starts in `/workspace`, reading API keys and provider credentials from the mounted `opencode.json` and terminal UI settings from `~/.config/opencode/tui.json`. See the [OpenCode documentation](https://opencode.ai/docs) for full config details.
+OpenCode starts in `/workspace`, reading API keys, provider credentials, and terminal UI settings from the mounted `~/.config/opencode` folder. See the [OpenCode documentation](https://opencode.ai/docs) for full config details.
 
 ### Step 5.5 - Resume an existing container (daily workflow)
 
