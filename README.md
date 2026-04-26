@@ -290,20 +290,7 @@ Verify Docker is running:
 docker --version
 ```
 
-### Step 5.2 - Review the Dockerfiles (optional)
-
-<details>
-<summary><strong>Click to expand.</strong> The Dockerfiles are short and commented; worth a look before building, but not required.</summary>
-
-- [`dockerfiles/Dockerfile.opencode`](dockerfiles/Dockerfile.opencode) (base image)
-- [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex) (derived image adding `texlive-full` and `latexmk`)
-- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama) (derived image adding Ollama)
-
-The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
-
-</details>
-
-### Step 5.3 - Build the image (one-time setup)
+### Step 5.2 - Build the image (one-time setup)
 
 From the repo root:
 
@@ -325,7 +312,7 @@ docker build -t opencode-gpu \
     -f dockerfiles/Dockerfile.opencode dockerfiles/
 ```
 
-In Step 5.4, use `opencode-gpu` instead of `opencode-nogpu`.
+In Step 5.3, use `opencode-gpu` instead of `opencode-nogpu`.
 
 **Project-specific extras**
 
@@ -347,11 +334,11 @@ Add a derived Dockerfile that layers tools on top of the base image. The reposit
 
 To layer on the GPU base instead, pass `--build-arg BASE_IMAGE=opencode-gpu`. `texlive-full` is several gigabytes, so the first build of the LaTeX image will take a while.
 
-In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex` or `opencode-ollama`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
+In Step 5.3, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex` or `opencode-ollama`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
 
 </details>
 
-### Step 5.4 - Create a container for a new project
+### Step 5.3 - Create a container for a new project
 
 Each project gets its own container, named after its directory (e.g. `my-project-opencode`).
 
@@ -443,7 +430,7 @@ opencode
 
 OpenCode starts in `/workspace`, reading API keys, provider credentials, and terminal UI settings from the mounted `~/.config/opencode` folder. See the [OpenCode documentation](https://opencode.ai/docs) for full config details.
 
-### Step 5.5 - Resume an existing container (daily workflow)
+### Step 5.4 - Resume an existing container (daily workflow)
 
 After the first run, always use `start` to resume — this preserves installed packages and configuration:
 
