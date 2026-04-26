@@ -297,6 +297,7 @@ docker --version
 
 - [`dockerfiles/Dockerfile.opencode`](dockerfiles/Dockerfile.opencode) (base image)
 - [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex) (derived image adding `texlive-full` and `latexmk`)
+- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama) (derived image adding Ollama)
 
 The official sandbox template runs as a non-root user called `agent` with sudo access. For system-level installations, switch to `USER root` in the Dockerfile, then back to `USER agent` at the end. See the [Docker custom templates documentation](https://docs.docker.com/ai/sandboxes/agents/custom-environments/) for details.
 
@@ -328,16 +329,25 @@ In Step 5.4, use `opencode-gpu` instead of `opencode-nogpu`.
 
 **Project-specific extras**
 
-Add a derived Dockerfile that layers tools on top of the base image. The repository includes one example, [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex), which installs `texlive-full` and `latexmk` on top of `opencode-nogpu`. Build it after the base image:
+Add a derived Dockerfile that layers tools on top of the base image. The repository includes two examples:
 
-```bash
-docker build -t opencode-latex \
-    -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
-```
+- [`dockerfiles/Dockerfile.opencode-latex`](dockerfiles/Dockerfile.opencode-latex), which installs `texlive-full` and `latexmk`:
 
-To layer on the GPU base instead, pass `--build-arg BASE_IMAGE=opencode-gpu`. `texlive-full` is several gigabytes, so the first build will take a while.
+  ```bash
+  docker build -t opencode-latex \
+      -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
+  ```
 
-In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
+- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama), which installs Ollama and starts it in the background:
+
+  ```bash
+  docker build -t opencode-ollama \
+      -f dockerfiles/Dockerfile.opencode-ollama dockerfiles/
+  ```
+
+To layer on the GPU base instead, pass `--build-arg BASE_IMAGE=opencode-gpu`. `texlive-full` is several gigabytes, so the first build of the LaTeX image will take a while.
+
+In Step 5.4, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex` or `opencode-ollama`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
 
 </details>
 
