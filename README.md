@@ -410,7 +410,7 @@ mkdir -p ~/.ollama
 workspace="$(pwd -P)"
 cname="my-project-opencode"   # Edit to your preferred container name
 
-docker run -it \
+docker run -it --gpus all \
     --name "${cname}" \
     --mount type=bind,src="${workspace}",dst=/workspace \
     --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
