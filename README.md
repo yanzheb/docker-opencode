@@ -411,6 +411,33 @@ To verify GPU access, run `nvidia-smi` inside the container.
 
 </details>
 
+<details>
+<summary><strong>Ollama variant. Click to expand.</strong></summary>
+
+Create the `.ollama` directory on the host first (one-time):
+
+```bash
+mkdir -p ~/.ollama
+```
+
+```bash
+# Navigate to your project directory first, e.g.:
+# cd ~/my-project
+
+workspace="$(pwd -P)"
+cname="my-project-opencode"   # Edit to your preferred container name
+
+docker run -it \
+    --name "${cname}" \
+    --mount type=bind,src="${workspace}",dst=/workspace \
+    --mount type=bind,src="$HOME/.config/opencode/opencode.json",dst=/home/agent/.config/opencode/opencode.json \
+    --mount type=bind,src="$HOME/.config/opencode/tui.json",dst=/home/agent/.config/opencode/tui.json \
+    --mount type=bind,src="$HOME/.ollama",dst=/home/agent/.ollama \
+    opencode-ollama
+```
+
+</details>
+
 The `--mount` flags share your project directory and OpenCode config with the container.
 
 Inside the container, launch OpenCode:
