@@ -325,16 +325,9 @@ Add a derived Dockerfile that layers tools on top of the base image. The reposit
       -f dockerfiles/Dockerfile.opencode-latex dockerfiles/
   ```
 
-- [`dockerfiles/Dockerfile.opencode-ollama`](dockerfiles/Dockerfile.opencode-ollama), which installs Ollama, Hermes Agent, and starts Ollama in the background:
-
-  ```bash
-  docker build -t opencode-ollama \
-      -f dockerfiles/Dockerfile.opencode-ollama dockerfiles/
-  ```
-
 To layer on the GPU base instead, pass `--build-arg BASE_IMAGE=opencode-gpu`. `texlive-full` is several gigabytes, so the first build of the LaTeX image will take a while.
 
-In Step 5.3, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex` or `opencode-ollama`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
+In Step 5.3, replace `opencode-nogpu` with your derived image name (e.g. `opencode-latex`). Additional derived images (`Dockerfile.opencode-rust`, etc.) follow the same pattern.
 
 </details>
 
@@ -391,35 +384,6 @@ docker run -it --gpus all \
 ```
 
 To verify GPU access, run `nvidia-smi` inside the container.
-
-</details>
-
-<details>
-<summary><strong>Ollama / Hermes Agent variant. Click to expand.</strong></summary>
-
-Create the `.ollama` and `.hermes` directories on the host first (one-time):
-
-```bash
-mkdir -p ~/.ollama ~/.hermes
-```
-
-```bash
-# Navigate to your project directory first, e.g.:
-# cd ~/my-project
-
-workspace="$(pwd -P)"
-cname="my-project-opencode"   # Edit to your preferred container name
-
-docker run -it --gpus all \
-    --name "${cname}" \
-    --mount type=bind,src="${workspace}",dst=/workspace \
-    --mount type=bind,src="$HOME/.config/opencode",dst=/home/agent/.config/opencode \
-    --mount type=bind,src="$HOME/.ollama",dst=/home/agent/.ollama \
-    --mount type=bind,src="$HOME/.hermes",dst=/home/agent/.hermes \
-    opencode-ollama
-```
-
-> **Note:** Hermes Agent stores its config, sessions, and logs in `~/.hermes`. Hermes also manages Node.js under `~/.hermes/node` and its code under `~/.hermes/hermes-agent`. Mounting `~/.hermes` lets you persist Hermes data across container restarts and configure it once.
 
 </details>
 
