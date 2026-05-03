@@ -10,6 +10,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 # Enable truecolor so OpenCode renders its theme correctly.
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
+ENV OPENCODE_ENABLE_EXA=1
 
 # Install Pixi globally. PIXI_NO_PATH_UPDATE skips unnecessary shell config.
 USER root
